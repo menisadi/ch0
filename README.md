@@ -1,4 +1,4 @@
-# Blindfold Chess CLI
+# ch0 - Blindfold Chess CLI
 
 Minimal terminal game for playing blindfold chess against built-in engines.
 
