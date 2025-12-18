@@ -12,6 +12,34 @@ from Engines.sunfish import sunfish_uci
 from Engines.sunfish.tools import uci
 
 
+# --- Colors (ANSI) ------------------------------------------------------------
+# Works in most terminals. On Windows, ANSI is supported in modern terminals;
+# if you need broader support, install `colorama` and it will be used if present.
+try:
+    import colorama  # type: ignore
+    colorama.just_fix_windows_console()
+except Exception:
+    pass
+
+
+class Style:
+    RESET = "\033[0m"
+    BOLD = "\033[1m"
+    DIM = "\033[2m"
+
+    RED = "\033[31m"
+    GREEN = "\033[32m"
+    YELLOW = "\033[33m"
+    BLUE = "\033[34m"
+    MAGENTA = "\033[35m"
+    CYAN = "\033[36m"
+
+
+def c(text: str, *styles: str) -> str:
+    return "".join(styles) + text + Style.RESET
+
+
+# --- Game logic --------------------------------------------------------------
 class Game:
     def __init__(self, engine_name: str, player_color: chess.Color):
         self.board = chess.Board()
@@ -97,19 +125,19 @@ def bot_makes_a_move(game: Game):
     else:
         game.pgn_text += f" {move_san}"
 
-    print(f"Engine plays: {move_san}")
+    # Minimal engine output (colored, no label)
+    print(c(move_san, Style.MAGENTA, Style.BOLD))
 
     # draw / checkmate handling
     check_draw, draw_type = is_a_draw(board)
     if check_draw:
-        print(f"Draw: {draw_type}")
+        print(c(f"Draw: {draw_type}", Style.YELLOW, Style.BOLD))
         game.pgn_text += " { The game is a draw. } 1/2-1/2"
         game.ended = True
         return
 
     if board.is_checkmate():
-        print("Game over – engine wins.")
-        # result from White/Black perspective
+        print(c("Checkmate.", Style.RED, Style.BOLD))
         result = "0-1" if game.player_color == chess.WHITE else "1-0"
         game.pgn_text += (
             f" {{ {bool_color_to_string(not game.player_color)} wins by checkmate. }} "
@@ -123,48 +151,48 @@ def bot_makes_a_move(game: Game):
 
 def choose_engine():
     options = ["random", "andoma", "sunfish"]
-    print("Choose engine:")
+    print(c("Choose engine:", Style.CYAN, Style.BOLD))
     for i, name in enumerate(options, start=1):
-        print(f"  {i}. {name}")
+        print(f"  {c(str(i) + '.', Style.DIM)} {c(name, Style.CYAN)}")
     while True:
-        choice = input("Engine [1-3 or name]: ").strip().lower()
+        choice = input(c("engine> ", Style.DIM)).strip().lower()
         if choice in {"1", "2", "3"}:
             return options[int(choice) - 1]
         if choice in options:
             return choice
-        print("Invalid choice.")
+        print(c("Invalid choice.", Style.RED))
 
 
 def choose_color():
-    print("Choose your color:")
-    print("  1. white")
-    print("  2. black")
-    print("  3. random")
+    print(c("Choose your color:", Style.CYAN, Style.BOLD))
+    print(f"  {c('1.', Style.DIM)} {c('white', Style.CYAN)}")
+    print(f"  {c('2.', Style.DIM)} {c('black', Style.CYAN)}")
+    print(f"  {c('3.', Style.DIM)} {c('random', Style.CYAN)}")
     while True:
-        choice = input("Color [1-3 or name]: ").strip().lower()
+        choice = input(c("color> ", Style.DIM)).strip().lower()
         if choice in {"1", "white"}:
             return chess.WHITE
         if choice in {"2", "black"}:
             return chess.BLACK
         if choice in {"3", "random"}:
             return random.choice([chess.WHITE, chess.BLACK])
-        print("Invalid choice.")
+        print(c("Invalid choice.", Style.RED))
 
 
 def print_help():
-    print("Lobby commands:")
-    print("  start  - start a new game (choose engine and color)")
-    print("  help   - show this help")
-    print("  quit   - quit")
-    print("")
-    print("In-game commands:")
-    print("  show   - show the board")
-    print("  moves  - show legal moves (SAN)")
-    print("  fen    - show FEN")
-    print("  pgn    - show PGN so far")
-    print("  resign - resign the game")
-    print("")
-    print("Or just type a move in SAN, e.g. e4, Nf3, exd5, a8=Q.")
+    print(c("Lobby:", Style.CYAN, Style.BOLD))
+    print(f"  {c('start', Style.CYAN)}  start a new game")
+    print(f"  {c('help', Style.CYAN)}   show this help")
+    print(f"  {c('quit', Style.CYAN)}   quit")
+    print()
+    print(c("In-game:", Style.CYAN, Style.BOLD))
+    print(f"  {c('show', Style.CYAN)}   show the board")
+    print(f"  {c('moves', Style.CYAN)}  show legal moves (SAN)")
+    print(f"  {c('fen', Style.CYAN)}    show FEN")
+    print(f"  {c('pgn', Style.CYAN)}    show PGN so far")
+    print(f"  {c('resign', Style.CYAN)} resign the game")
+    print()
+    print(c("Or type a move in SAN, e.g. e4, Nf3, exd5, a8=Q.", Style.DIM))
 
 
 def parse_command(s: str):
@@ -180,18 +208,18 @@ def parse_command(s: str):
 def ask_yes_no(prompt: str, default_no: bool = True) -> bool:
     suffix = " [y/N]: " if default_no else " [Y/n]: "
     while True:
-        ans = input(prompt + suffix).strip().lower()
+        ans = input(c(prompt + suffix, Style.DIM)).strip().lower()
         if not ans:
             return not default_no
         if ans in {"y", "yes"}:
             return True
         if ans in {"n", "no"}:
             return False
-        print("Please answer y or n.")
+        print(c("Please answer y or n.", Style.RED))
 
 
 def main():
-    print("=== Blindfold Chess – Terminal Edition ===")
+    print(c("\nBlindfold Chess\n", Style.BOLD))
     print_help()
     print()
 
@@ -201,15 +229,17 @@ def main():
         # If a game ended, optionally print PGN, then return to lobby.
         if game is not None and game.ended:
             if game.pgn_text and ask_yes_no("Print final PGN?", default_no=True):
-                print("\nFinal PGN:")
+                print()
+                print(c("Final PGN:", Style.CYAN, Style.BOLD))
                 print(finalize_pgn(game.pgn_text, game.player_color, game.engine_name))
             game = None
-            print("\nBack to lobby. Type 'start' to begin a new game.")
+            print()
+            print(c("Lobby. Type 'start' to play.", Style.DIM))
             continue
 
         # No active game: only limited commands work.
         if game is None:
-            user_in = input("Command (start/help/quit): ").strip()
+            user_in = input(c("> ", Style.DIM)).strip()
             if not user_in:
                 continue
 
@@ -218,9 +248,17 @@ def main():
                 engine_name = choose_engine()
                 player_color = choose_color()
                 game = Game(engine_name, player_color)
-                print(f"\nYou are playing {bool_color_to_string(player_color)} "
-                      f"against the {engine_name} engine.\n")
-                print("Type 'show' to display the board at any time.\n")
+
+                print()
+                print(
+                    c("You:", Style.DIM)
+                    + " "
+                    + c(bool_color_to_string(player_color), Style.CYAN, Style.BOLD)
+                    + c(" vs ", Style.DIM)
+                    + c(engine_name, Style.CYAN, Style.BOLD)
+                )
+                print(c("Tip: type 'show' to display the board.", Style.DIM))
+                print()
 
                 # If the engine is white, let it move first.
                 if player_color == chess.BLACK:
@@ -229,13 +267,14 @@ def main():
 
             if cmd == "help":
                 print_help()
+                print()
                 continue
 
             if cmd == "quit":
-                print("Goodbye.")
+                print(c("Goodbye.", Style.DIM))
                 break
 
-            print("No active game. Use 'start' to begin or 'help' for options.")
+            print(c("No active game. Type 'start' (or 'help', 'quit').", Style.RED))
             continue
 
         # If it's engine's turn, just let it move.
@@ -243,7 +282,7 @@ def main():
             bot_makes_a_move(game)
             continue
 
-        user_in = input("Your move (or command): ").strip()
+        user_in = input(c("> ", Style.DIM)).strip()
         if not user_in:
             continue
 
@@ -258,31 +297,34 @@ def main():
             elif cmd == "moves":
                 moves_in_uci = list(game.board.legal_moves)
                 moves_in_san = [game.board.san(m) for m in moves_in_uci]
-                print("Legal moves:", " ".join(moves_in_san))
+                print(" ".join(moves_in_san))
             elif cmd == "fen":
                 print(game.board.fen())
             elif cmd == "pgn":
                 print(finalize_pgn(game.pgn_text, game.player_color, game.engine_name))
             elif cmd == "resign":
-                print("You resigned.")
+                print(c("Resigned.", Style.YELLOW, Style.BOLD))
                 result = "0-1" if game.player_color == chess.WHITE else "1-0"
                 game.pgn_text += (
                     f" {{ {bool_color_to_string(game.player_color)} resigns. }} {result}"
                 )
                 game.ended = True
             elif cmd == "quit":
-                print("Goodbye.")
+                print(c("Goodbye.", Style.DIM))
                 break
             elif cmd == "start":
-                print("Nope 🙂 A game is already in progress. Resign or finish it first.")
+                print(c("Game in progress. Finish or resign first.", Style.RED))
             continue
 
         # Otherwise, try to interpret it as a move in SAN
         try:
             game.board.push_san(user_in)
         except ValueError:
-            print(f"'{user_in}' is not a legal SAN move or command. Type 'help' for options.")
+            print(c("Illegal move / unknown command.", Style.RED))
             continue
+
+        # Optional: extremely subtle acknowledgement (comment out if you want *zero* noise)
+        # print(c("✓", Style.GREEN, Style.DIM))
 
         if game.turn == chess.WHITE:
             game.count += 1
@@ -292,13 +334,13 @@ def main():
 
         check_draw, draw_type = is_a_draw(game.board)
         if check_draw:
-            print(f"Draw: {draw_type}")
+            print(c(f"Draw: {draw_type}", Style.YELLOW, Style.BOLD))
             game.pgn_text += " { The game is a draw. } 1/2-1/2"
             game.ended = True
             continue
 
         if game.board.is_checkmate():
-            print("Game over – you win!")
+            print(c("Checkmate. You win.", Style.GREEN, Style.BOLD))
             result = "1-0" if game.player_color == chess.WHITE else "0-1"
             game.pgn_text += (
                 f" {{ {bool_color_to_string(game.player_color)} wins by checkmate. }} "
