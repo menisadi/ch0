@@ -10,15 +10,19 @@ Minimal terminal game for playing blindfold chess against built-in engines.
 ## Gameplay
 - Play blindfolded in the terminal: enter SAN moves (`e4`, `Nf3`, `exd5`, `a8=Q`) or commands like `show`, `moves`, `fen`, `pgn`, `resign`.
 - Start from the lobby with `start`, choose engine and color; the bot moves automatically on its turn.
+- Use `help` in the lobby or in-game to list commands; `quit` exits.
+- Commands can be prefixed with `:` (e.g., `:show`).
 - PGN is built as you play; you can print it when the game ends.
 
 ## Dependencies
 - Python 3.13+ with `uv` for managing the virtualenv (`uv sync`).
-- Runtime: `python-chess`; optional `colorama` for Windows ANSI colors.
+- Runtime: `python-chess`; optional `colorama` for Windows ANSI colors (auto-enabled if installed).
 - Optional data: `book.bin` opening book in the repo root.
 
 ## Engines
+- Options: `random`, `andoma`, `sunfish`, or `uci`.
+- UCI lets you provide a path/command to any UCI engine (e.g., Stockfish) and plays via `python-chess`.
 - Includes the open-source Sunfish and Andoma engines under `Engines/`; they are third-party projects I do not create or maintain.
 
-## PLans
-- [ ] Add stockfish
+## Plans
+- [ ] Add stockfish bundling or automatic UCI discovery
