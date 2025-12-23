@@ -1,11 +1,15 @@
 #!/usr/bin/env -S uv run
 import random
+import subprocess
 import io
+import os
+import shlex
 from datetime import date
 
 import chess
 import chess.pgn
 import chess.polyglot
+import chess.engine
 
 from Engines.andoma.movegeneration import next_move as andoma_gen
 from Engines.sunfish import sunfish_uci
@@ -41,10 +45,18 @@ def c(text: str, *styles: str) -> str:
 
 # --- Game logic --------------------------------------------------------------
 class Game:
-    def __init__(self, engine_name: str, player_color: chess.Color):
+    def __init__(
+        self,
+        engine_kind: str,
+        engine_name: str,
+        player_color: chess.Color,
+        engine: chess.engine.SimpleEngine | None = None,
+    ):
         self.board = chess.Board()
-        self.engine_name = engine_name  # "random", "andoma", "sunfish"
+        self.engine_kind = engine_kind  # "random", "andoma", "sunfish", "uci"
+        self.engine_name = engine_name
         self.player_color = player_color
+        self.engine = engine
         self.turn = chess.WHITE  # whose turn it is to move in our bookkeeping
         self.count = 0           # move number (full moves)
         self.pgn_text = ""
@@ -56,6 +68,18 @@ class Game:
         self.count = 0
         self.pgn_text = ""
         self.ended = False
+
+    def close_engine(self):
+        if self.engine is None:
+            return
+        try:
+            self.engine.quit()
+        except Exception:
+            try:
+                self.engine.close()
+            except Exception:
+                pass
+        self.engine = None
 
 
 def is_a_draw(board: chess.Board):
@@ -94,9 +118,9 @@ def bot_makes_a_move(game: Game):
     board = game.board
     move = random.choice(list(board.legal_moves))
 
-    if game.engine_name == "andoma":
+    if game.engine_kind == "andoma":
         move = andoma_gen(depth=4, board=board, debug=False)
-    elif game.engine_name == "sunfish":
+    elif game.engine_kind == "sunfish":
         position = uci.from_fen(*board.fen().split())
         current_hist = (
             [position]
@@ -106,6 +130,12 @@ def bot_makes_a_move(game: Game):
         total_time = random.randint(10, 60)
         _, uci_move_str = sunfish_uci.generate_move(current_hist, total_time)
         move = chess.Move.from_uci(uci_move_str)
+    elif game.engine_kind == "uci":
+        if game.engine is None:
+            raise RuntimeError("UCI engine is not initialized.")
+        think_time = random.uniform(0.1, 0.5)
+        result = game.engine.play(board, chess.engine.Limit(time=think_time))
+        move = result.move
 
     # optional opening book
     coin = random.randint(0, 1)
@@ -149,17 +179,42 @@ def bot_makes_a_move(game: Game):
     game.turn = not game.turn
 
 
-def choose_engine():
-    options = ["random", "andoma", "sunfish"]
+def _engine_display_name(command: str, engine: chess.engine.SimpleEngine) -> str:
+    name = engine.id.get("name")
+    if name:
+        return name
+    return os.path.basename(command.split()[0]) or "UCI"
+
+
+def _spawn_uci_engine(command: str) -> chess.engine.SimpleEngine | None:
+    cmd = shlex.split(command)
+    if not cmd:
+        return None
+    try:
+        return chess.engine.SimpleEngine.popen_uci(cmd, stderr=subprocess.DEVNULL)
+    except (FileNotFoundError, PermissionError, OSError, chess.engine.EngineError):
+        return None
+
+
+def choose_engine() -> tuple[str, str, chess.engine.SimpleEngine | None]:
+    options = ["random", "andoma", "sunfish", "uci"]
     print(c("Choose engine:", Style.CYAN, Style.BOLD))
     for i, name in enumerate(options, start=1):
         print(f"  {c(str(i) + '.', Style.DIM)} {c(name, Style.CYAN)}")
     while True:
         choice = input(c("engine> ", Style.DIM)).strip().lower()
-        if choice in {"1", "2", "3"}:
-            return options[int(choice) - 1]
+        if choice in {"1", "2", "3", "4"}:
+            choice = options[int(choice) - 1]
         if choice in options:
-            return choice
+            if choice != "uci":
+                return choice, choice, None
+            while True:
+                cmd = input(c("uci engine path/command> ", Style.DIM)).strip()
+                engine = _spawn_uci_engine(cmd)
+                if engine is not None:
+                    display_name = _engine_display_name(cmd, engine)
+                    return "uci", display_name, engine
+                print(c("Could not start engine. Try again.", Style.RED))
         print(c("Invalid choice.", Style.RED))
 
 
@@ -232,6 +287,7 @@ def main():
                 print()
                 print(c("Final PGN:", Style.CYAN, Style.BOLD))
                 print(finalize_pgn(game.pgn_text, game.player_color, game.engine_name))
+            game.close_engine()
             game = None
             print()
             print(c("Lobby. Type 'start' to play.", Style.DIM))
@@ -245,9 +301,9 @@ def main():
 
             cmd = parse_command(user_in)
             if cmd == "start":
-                engine_name = choose_engine()
+                engine_kind, engine_name, engine = choose_engine()
                 player_color = choose_color()
-                game = Game(engine_name, player_color)
+                game = Game(engine_kind, engine_name, player_color, engine=engine)
 
                 print()
                 print(
@@ -272,6 +328,8 @@ def main():
 
             if cmd == "quit":
                 print(c("Goodbye.", Style.DIM))
+                if game is not None:
+                    game.close_engine()
                 break
 
             print(c("No active game. Type 'start' (or 'help', 'quit').", Style.RED))
@@ -311,6 +369,7 @@ def main():
                 game.ended = True
             elif cmd == "quit":
                 print(c("Goodbye.", Style.DIM))
+                game.close_engine()
                 break
             elif cmd == "start":
                 print(c("Game in progress. Finish or resign first.", Style.RED))
