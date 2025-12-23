@@ -1,9 +1,32 @@
+[build-system]
+requires = ["hatchling>=1.25.0"]
+build-backend = "hatchling.build"
+
 [project]
 name = "ch0"
 version = "0.1.0"
-description = "Add your description here"
+description = "Blindfold chess CLI with built-in engines"
 readme = "README.md"
 requires-python = ">=3.13"
+authors = [{ name = "menisadi" }]
 dependencies = [
     "chess>=1.11.2",
 ]
+
+[project.urls]
+Homepage = "https://github.com/menisadi/ch0"
+Repository = "https://github.com/menisadi/ch0"
+
+[project.scripts]
+ch0 = "main:main"
+
+[tool.hatch.build]
+exclude = [
+    "Engines/stockfish_8_x64/**",
+    "Engines/stockfish-191-64-ja/**",
+    "**/__pycache__/**",
+]
+
+[tool.hatch.build.targets.wheel]
+modules = ["main"]
+packages = ["Engines"]
