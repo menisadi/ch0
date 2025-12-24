@@ -29,7 +29,6 @@ Minimal terminal game for playing blindfold chess against built-in engines.
 
 ## TODO
 
-- [ ] Add Stockfish bundling or automatic UCI discovery
 - [ ] Fix turn bookkeeping - Remove `game.turn` and rely on `board.turn`
 - [ ] Update move numbering / PGN formatting using `board.turn` before pushing moves
 - [ ] Sunfish: validate emitted UCI move is legal
@@ -39,4 +38,5 @@ Minimal terminal game for playing blindfold chess against built-in engines.
 - [ ] Add `status` / `check` command that reports check-like info
 - [ ] Decide and implement draw policy: claimable vs automatic handling of draws
 - [ ] Add optional PGN autosave to a file (date/engine/color in file-name)
-
+- [ ] Add "illegal moves" count (which will be printed at the end)
+- [ ] Add Stockfish bundling or automatic UCI discovery
