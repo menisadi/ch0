@@ -4,7 +4,7 @@ import re, time
 from concurrent.futures import ThreadPoolExecutor
 from threading import Event
 from functools import partial
-from Engines.sunfish import sunfish
+from .. import sunfish
 
 print = partial(print, flush=True)
 

@@ -11,9 +11,9 @@ import chess.pgn
 import chess.polyglot
 import chess.engine
 
-from Engines.andoma.movegeneration import next_move as andoma_gen
-from Engines.sunfish import sunfish_uci
-from Engines.sunfish.tools import uci
+from .engines.andoma.movegeneration import next_move as andoma_gen
+from .engines.sunfish import sunfish_uci
+from .engines.sunfish.tools import uci
 
 
 # --- Colors (ANSI) ------------------------------------------------------------

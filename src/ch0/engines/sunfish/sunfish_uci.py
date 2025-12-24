@@ -1,5 +1,5 @@
 import time
-from Engines.sunfish.sunfish import (
+from .sunfish import (
     Searcher,
     Position,
     initial,

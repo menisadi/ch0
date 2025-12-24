@@ -2,7 +2,7 @@ from typing import Dict, List, Any
 import chess
 import sys
 import time
-from Engines.andoma.evaluate import evaluate_board, move_value, check_end_game
+from .evaluate import evaluate_board, move_value, check_end_game
 
 debug_info: Dict[str, Any] = {}
 
