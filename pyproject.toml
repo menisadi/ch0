@@ -23,15 +23,14 @@ Homepage = "https://github.com/menisadi/ch0"
 Repository = "https://github.com/menisadi/ch0"
 
 [project.scripts]
-ch0 = "main:main"
+ch0 = "ch0.cli:main"
 
 [tool.hatch.build]
 exclude = [
-    "Engines/stockfish_8_x64/**",
-    "Engines/stockfish-191-64-ja/**",
+    "src/ch0/engines/stockfish_8_x64/**",
+    "src/ch0/engines/stockfish-191-64-ja/**",
     "**/__pycache__/**",
 ]
 
 [tool.hatch.build.targets.wheel]
-modules = ["main"]
-packages = ["Engines"]
+packages = ["src/ch0"]

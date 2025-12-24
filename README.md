@@ -5,7 +5,7 @@ Minimal terminal game for playing blindfold chess against built-in engines.
 ## Quick start
 
 - Install deps with `uv sync` (Python 3.13+).
-- Run the game: `uv run main.py` and follow the prompts to pick an engine and color.
+- Run the game: `uv run ch0` and follow the prompts to pick an engine and color.
 - Optional: place `book.bin` in the repo root to enable opening-book moves.
 
 ## Gameplay
@@ -25,7 +25,7 @@ Minimal terminal game for playing blindfold chess against built-in engines.
 
 - Options: `random`, `andoma`, `sunfish`, or `uci`.
 - UCI lets you provide a path/command to any UCI engine (e.g., Stockfish) and plays via `python-chess`.
-- Includes the open-source Sunfish and Andoma engines under `Engines/`; they are third-party projects I do not create or maintain.
+- Includes the open-source Sunfish and Andoma engines under `src/ch0/engines/`; they are third-party projects I do not create or maintain.
 
 ## TODO
 
