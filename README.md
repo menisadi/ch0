@@ -27,6 +27,11 @@ Minimal terminal game for playing blindfold chess against built-in engines.
 - UCI lets you provide a path/command to any UCI engine (e.g., Stockfish) and plays via `python-chess`.
 - Includes the open-source Sunfish and Andoma engines under `src/ch0/engines/`; they are third-party projects I do not create or maintain.
 
+## Third-party licenses
+
+- Sunfish is distributed under the GNU General Public License; see `src/ch0/engines/sunfish/LICENSE.md`.
+- Andoma is distributed under the MIT License; see `src/ch0/engines/andoma/LICENSE`.
+
 ## TODO
 
 - [ ] Fix turn bookkeeping - Remove `game.turn` and rely on `board.turn`

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ch0"
-version = "0.1.0"
+version = "0.2.1"
 description = "Blindfold chess CLI with built-in engines"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -14,7 +14,7 @@ dependencies = [
     "chess>=1.11.2",
 ]
 classifiers = [
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Programming Language :: Python :: 3",
 ]
 
@@ -29,6 +29,10 @@ ch0 = "ch0.cli:main"
 exclude = [
     "src/ch0/engines/stockfish_8_x64/**",
     "src/ch0/engines/stockfish-191-64-ja/**",
+    "src/ch0/engines/sunfish/docs/**",
+    "src/ch0/engines/sunfish/nnue/**",
+    "src/ch0/engines/sunfish/sunfish_nnue.py",
+    "src/ch0/engines/sunfish/tools/**",
     "**/__pycache__/**",
 ]
 
