@@ -3,8 +3,8 @@ requires = ["hatchling>=1.25.0"]
 build-backend = "hatchling.build"
 
 [project]
-name = "ch0"
-version = "0.2.1"
+name = "play-ch0"
+version = "0.2.2"
 description = "Blindfold chess CLI with built-in engines"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -24,6 +24,7 @@ Repository = "https://github.com/menisadi/ch0"
 
 [project.scripts]
 ch0 = "ch0.cli:main"
+play-ch0 = "ch0.cli:main"
 
 [tool.hatch.build]
 exclude = [
