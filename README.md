@@ -3,7 +3,6 @@
 [![PyPI](https://img.shields.io/pypi/v/play-ch0.svg)](https://pypi.org/project/play-ch0/)
 [![Python](https://img.shields.io/pypi/pyversions/play-ch0.svg)](https://pypi.org/project/play-ch0/)
 [![License: GPLv3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Downloads](https://img.shields.io/pypi/dm/play-ch0.svg)](https://pypi.org/project/play-ch0/)
 
 A minimal terminal game for playing blindfold chess against built-in engines.
 
