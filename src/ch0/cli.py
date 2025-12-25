@@ -4,7 +4,7 @@ import subprocess
 import io
 import os
 import shlex
-from datetime import date
+from datetime import date, datetime
 
 import chess
 import chess.pgn
@@ -273,6 +273,32 @@ def ask_yes_no(prompt: str, default_no: bool = True) -> bool:
         print(c("Please answer y or n.", Style.RED))
 
 
+def _slugify_filename(text: str) -> str:
+    cleaned = []
+    for ch in text.strip().lower():
+        if ch.isalnum() or ch in {"-", "_"}:
+            cleaned.append(ch)
+        elif ch.isspace():
+            cleaned.append("_")
+    return "".join(cleaned) or "bot"
+
+
+def ask_pgn_action() -> str:
+    prompt = "Final PGN: print, save, or skip?"
+    suffix = " [N]: "
+    while True:
+        ans = input(c(prompt + suffix, Style.DIM)).strip().lower()
+        if not ans:
+            return "none"
+        if ans in {"p", "print"}:
+            return "print"
+        if ans in {"s", "save"}:
+            return "save"
+        if ans in {"n", "no", "none", "skip"}:
+            return "none"
+        print(c("Please answer print, save, or skip.", Style.RED))
+
+
 def main():
     print(c("\nBlindfold Chess\n", Style.BOLD))
     print_help()
@@ -283,10 +309,22 @@ def main():
     while True:
         # If a game ended, optionally print PGN, then return to lobby.
         if game is not None and game.ended:
-            if game.pgn_text and ask_yes_no("Print final PGN?", default_no=True):
-                print()
-                print(c("Final PGN:", Style.CYAN, Style.BOLD))
-                print(finalize_pgn(game.pgn_text, game.player_color, game.engine_name))
+            if game.pgn_text:
+                action = ask_pgn_action()
+                if action == "print":
+                    print()
+                    print(c("Final PGN:", Style.CYAN, Style.BOLD))
+                    print(finalize_pgn(game.pgn_text, game.player_color, game.engine_name))
+                elif action == "save":
+                    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    opponent = _slugify_filename(game.engine_name)
+                    filename = f"ch0_{opponent}_{stamp}.pgn"
+                    with open(filename, "w", encoding="utf-8") as handle:
+                        handle.write(
+                            str(finalize_pgn(game.pgn_text, game.player_color, game.engine_name))
+                        )
+                        handle.write("\n")
+                    print(c(f"Saved PGN to {filename}", Style.DIM))
             game.close_engine()
             game = None
             print()
