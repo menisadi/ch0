@@ -284,8 +284,8 @@ def _slugify_filename(text: str) -> str:
 
 
 def ask_pgn_action() -> str:
-    prompt = "Final PGN: print, save, or skip?"
-    suffix = " [N]: "
+    prompt = "Final PGN: (p)rint, (s)ave, or (n)one?"
+    suffix = " [n]: "
     while True:
         ans = input(c(prompt + suffix, Style.DIM)).strip().lower()
         if not ans:
