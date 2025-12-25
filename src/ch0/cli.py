@@ -237,6 +237,7 @@ def choose_color():
 def print_help():
     print(c("Lobby:", Style.CYAN, Style.BOLD))
     print(f"  {c('start', Style.CYAN)}  start a new game")
+    print(f"  {c('quick', Style.CYAN)}  start with sunfish + random color")
     print(f"  {c('help', Style.CYAN)}   show this help")
     print(f"  {c('quit', Style.CYAN)}   quit")
     print()
@@ -328,7 +329,7 @@ def main():
             game.close_engine()
             game = None
             print()
-            print(c("Lobby. Type 'start' to play.", Style.DIM))
+            print(c("Lobby. Type 'start' or 'quick' to play.", Style.DIM))
             continue
 
         # No active game: only limited commands work.
@@ -359,6 +360,28 @@ def main():
                     bot_makes_a_move(game)
                 continue
 
+            if cmd == "quick":
+                engine_kind = "sunfish"
+                engine_name = "sunfish"
+                engine = None
+                player_color = random.choice([chess.WHITE, chess.BLACK])
+                game = Game(engine_kind, engine_name, player_color, engine=engine)
+
+                print()
+                print(
+                    c("You:", Style.DIM)
+                    + " "
+                    + c(bool_color_to_string(player_color), Style.CYAN, Style.BOLD)
+                    + c(" vs ", Style.DIM)
+                    + c(engine_name, Style.CYAN, Style.BOLD)
+                )
+                print(c("Tip: type 'show' to display the board.", Style.DIM))
+                print()
+
+                if player_color == chess.BLACK:
+                    bot_makes_a_move(game)
+                continue
+
             if cmd == "help":
                 print_help()
                 print()
@@ -370,7 +393,7 @@ def main():
                     game.close_engine()
                 break
 
-            print(c("No active game. Type 'start' (or 'help', 'quit').", Style.RED))
+            print(c("No active game. Type 'start' or 'quick' (or 'help', 'quit').", Style.RED))
             continue
 
         # If it's engine's turn, just let it move.
