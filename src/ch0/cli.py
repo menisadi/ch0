@@ -1,4 +1,5 @@
 #!/usr/bin/env -S uv run
+import argparse
 import random
 import subprocess
 import io
@@ -51,12 +52,18 @@ class Game:
         engine_name: str,
         player_color: chess.Color,
         engine: chess.engine.SimpleEngine | None = None,
+        verbose: bool = False,
+        book_path: str | None = None,
+        book_chance: float = 0.5,
     ):
         self.board = chess.Board()
         self.engine_kind = engine_kind  # "random", "andoma", "sunfish", "uci"
         self.engine_name = engine_name
         self.player_color = player_color
         self.engine = engine
+        self.verbose = verbose
+        self.book_path = book_path
+        self.book_chance = book_chance
         self.turn = chess.WHITE  # whose turn it is to move in our bookkeeping
         self.count = 0           # move number (full moves)
         self.pgn_text = ""
@@ -117,6 +124,7 @@ def finalize_pgn(pgn_str: str, player_color: chess.Color, engine_name: str):
 def bot_makes_a_move(game: Game):
     board = game.board
     move = random.choice(list(board.legal_moves))
+    used_book = False
 
     if game.engine_kind == "andoma":
         move = andoma_gen(depth=4, board=board, debug=False)
@@ -138,11 +146,12 @@ def bot_makes_a_move(game: Game):
         move = result.move
 
     # optional opening book
-    coin = random.randint(0, 1)
-    if game.count < 15 and coin == 1:
+    roll = random.random()
+    if game.book_path and game.count < 15 and roll < game.book_chance:
         try:
-            with chess.polyglot.open_reader("book.bin") as reader:
+            with chess.polyglot.open_reader(game.book_path) as reader:
                 move = reader.weighted_choice(board).move
+                used_book = True
         except (IndexError, FileNotFoundError):
             pass
 
@@ -156,7 +165,10 @@ def bot_makes_a_move(game: Game):
         game.pgn_text += f" {move_san}"
 
     # Minimal engine output (colored, no label)
-    print(c(move_san, Style.MAGENTA, Style.BOLD))
+    if game.verbose and used_book:
+        print(f"{c(move_san, Style.MAGENTA, Style.BOLD)}{c(' (book)', Style.DIM)}")
+    else:
+        print(c(move_san, Style.MAGENTA, Style.BOLD))
 
     # draw / checkmate handling
     check_draw, draw_type = is_a_draw(board)
@@ -194,6 +206,15 @@ def _spawn_uci_engine(command: str) -> chess.engine.SimpleEngine | None:
         return chess.engine.SimpleEngine.popen_uci(cmd, stderr=subprocess.DEVNULL)
     except (FileNotFoundError, PermissionError, OSError, chess.engine.EngineError):
         return None
+
+
+def _book_status_line(book_path: str | None, book_chance: float) -> str:
+    if book_path is None:
+        return "Opening book: none"
+    if os.path.exists(book_path):
+        chance_pct = round(book_chance * 100)
+        return f"Opening book: {book_path} ({chance_pct}%)"
+    return "Opening book: none"
 
 
 def choose_engine() -> tuple[str, str, chess.engine.SimpleEngine | None]:
@@ -300,7 +321,31 @@ def ask_pgn_action() -> str:
         print(c("Please answer print, save, or skip.", Style.RED))
 
 
-def main():
+def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Show a subtle indicator when an opening book move is used.",
+    )
+    parser.add_argument(
+        "--book",
+        metavar="PATH",
+        default="book.bin",
+        help="Path to a Polyglot opening book (default: book.bin).",
+    )
+    parser.add_argument(
+        "--book-chance",
+        metavar="P",
+        type=float,
+        default=0.5,
+        help="Chance to use an opening book move when available (0.0-1.0).",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None):
+    args = _parse_args(argv)
     print(c("\nBlindfold Chess\n", Style.BOLD))
     print_help()
     print()
@@ -342,7 +387,15 @@ def main():
             if cmd == "start":
                 engine_kind, engine_name, engine = choose_engine()
                 player_color = choose_color()
-                game = Game(engine_kind, engine_name, player_color, engine=engine)
+                game = Game(
+                    engine_kind,
+                    engine_name,
+                    player_color,
+                    engine=engine,
+                    verbose=args.verbose,
+                    book_path=args.book,
+                    book_chance=args.book_chance,
+                )
 
                 print()
                 print(
@@ -352,6 +405,7 @@ def main():
                     + c(" vs ", Style.DIM)
                     + c(engine_name, Style.CYAN, Style.BOLD)
                 )
+                print(c(_book_status_line(args.book, args.book_chance), Style.DIM))
                 print(c("Tip: type 'show' to display the board.", Style.DIM))
                 print()
 
@@ -365,7 +419,15 @@ def main():
                 engine_name = "sunfish"
                 engine = None
                 player_color = random.choice([chess.WHITE, chess.BLACK])
-                game = Game(engine_kind, engine_name, player_color, engine=engine)
+                game = Game(
+                    engine_kind,
+                    engine_name,
+                    player_color,
+                    engine=engine,
+                    verbose=args.verbose,
+                    book_path=args.book,
+                    book_chance=args.book_chance,
+                )
 
                 print()
                 print(
@@ -375,6 +437,7 @@ def main():
                     + c(" vs ", Style.DIM)
                     + c(engine_name, Style.CYAN, Style.BOLD)
                 )
+                print(c(_book_status_line(args.book, args.book_chance), Style.DIM))
                 print(c("Tip: type 'show' to display the board.", Style.DIM))
                 print()
 
