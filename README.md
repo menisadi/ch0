@@ -112,7 +112,7 @@ uv run ch0
 - [ ] Update move numbering / PGN formatting using `board.turn` before pushing moves
 - [ ] Sunfish: validate emitted UCI move is legal
 - [ ] Make Polyglot book usage optional
-- [ ] Show a subtle “(book)” indicator when a book move is used
+- [x] Show a subtle “(book)” indicator when a book move is used
 - [ ] Add `undo` (at least one ply)
 - [ ] Add `status` / `check` command that reports check-like info
 - [ ] Decide and implement draw policy: claimable vs automatic handling of draws
