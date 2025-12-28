@@ -28,6 +28,7 @@ play-ch0 = "ch0.cli:main"
 
 [tool.hatch.build]
 exclude = [
+    "book.bin",
     "src/ch0/engines/stockfish_8_x64/**",
     "src/ch0/engines/stockfish-191-64-ja/**",
     "src/ch0/engines/sunfish/docs/**",
