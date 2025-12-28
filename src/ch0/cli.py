@@ -155,6 +155,7 @@ def bot_makes_a_move(game: Game):
         except (IndexError, FileNotFoundError):
             pass
 
+    turn_number = board.fullmove_number
     move_san = board.san(move)
     board.push(move)
 
@@ -165,10 +166,14 @@ def bot_makes_a_move(game: Game):
         game.pgn_text += f" {move_san}"
 
     # Minimal engine output (colored, no label)
+    turn_prefix = c(f"{turn_number}.", Style.DIM)
     if game.verbose and used_book:
-        print(f"{c(move_san, Style.MAGENTA, Style.BOLD)}{c(' (book)', Style.DIM)}")
+        print(
+            f"{turn_prefix} {c(move_san, Style.MAGENTA, Style.BOLD)}"
+            f"{c(' (book)', Style.DIM)}"
+        )
     else:
-        print(c(move_san, Style.MAGENTA, Style.BOLD))
+        print(f"{turn_prefix} {c(move_san, Style.MAGENTA, Style.BOLD)}")
 
     # draw / checkmate handling
     check_draw, draw_type = is_a_draw(board)
@@ -464,7 +469,8 @@ def main(argv: list[str] | None = None):
             bot_makes_a_move(game)
             continue
 
-        user_in = input(c("> ", Style.DIM)).strip()
+        turn_prompt = f"{game.board.fullmove_number}> "
+        user_in = input(c(turn_prompt, Style.DIM)).strip()
         if not user_in:
             continue
 
