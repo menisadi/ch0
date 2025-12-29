@@ -119,3 +119,4 @@ uv run ch0
 - [ ] Add optional PGN autosave to a file (date/engine/color in file-name)
 - [ ] Add "illegal moves" count (printed at the end)
 - [ ] Add Stockfish bundling or automatic UCI discovery
+- [ ] Add some sort of post-game analysis
