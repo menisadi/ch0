@@ -326,6 +326,62 @@ def ask_pgn_action() -> str:
         print(c("Please answer print, save, or skip.", Style.RED))
 
 
+def _score_to_cp(score: chess.engine.PovScore) -> int:
+    return score.score(mate_score=100000)
+
+
+def _summarize_cpl(loss_cp: int) -> str:
+    return f"{loss_cp} CPL"
+
+
+def _analyze_pgn_with_stockfish(
+    game_pgn: chess.pgn.Game,
+    stockfish_cmd: str,
+) -> dict[chess.Color, dict[str, int]] | None:
+    cmd = stockfish_cmd.strip() or "stockfish"
+    engine = _spawn_uci_engine(cmd)
+    if engine is None:
+        return None
+
+    stats = {
+        chess.WHITE: {"inaccuracies": 0, "mistakes": 0, "blunders": 0, "cpl": 0},
+        chess.BLACK: {"inaccuracies": 0, "mistakes": 0, "blunders": 0, "cpl": 0},
+    }
+    board = game_pgn.board()
+    limit = chess.engine.Limit(depth=12)
+
+    try:
+        for move in game_pgn.mainline_moves():
+            mover = board.turn
+            best_info = engine.analyse(board, limit)
+            best_cp = _score_to_cp(best_info["score"].pov(mover))
+
+            played_info = engine.analyse(board, limit, root_moves=[move])
+            played_cp = _score_to_cp(played_info["score"].pov(mover))
+
+            loss = max(0, best_cp - played_cp)
+            stats[mover]["cpl"] += loss
+
+            if loss >= 300:
+                stats[mover]["blunders"] += 1
+            elif loss >= 100:
+                stats[mover]["mistakes"] += 1
+            elif loss >= 50:
+                stats[mover]["inaccuracies"] += 1
+
+            board.push(move)
+    finally:
+        engine.quit()
+
+    return stats
+
+
+def ask_stockfish_command() -> str:
+    prompt = "Stockfish command/path"
+    suffix = " [stockfish]: "
+    return input(c(prompt + suffix, Style.DIM)).strip()
+
+
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -361,21 +417,45 @@ def main(argv: list[str] | None = None):
         # If a game ended, optionally print PGN, then return to lobby.
         if game is not None and game.ended:
             if game.pgn_text:
+                final_pgn = finalize_pgn(game.pgn_text, game.player_color, game.engine_name)
                 action = ask_pgn_action()
                 if action == "print":
                     print()
                     print(c("Final PGN:", Style.CYAN, Style.BOLD))
-                    print(finalize_pgn(game.pgn_text, game.player_color, game.engine_name))
+                    print(final_pgn)
                 elif action == "save":
                     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                     opponent = _slugify_filename(game.engine_name)
                     filename = f"ch0_{opponent}_{stamp}.pgn"
                     with open(filename, "w", encoding="utf-8") as handle:
-                        handle.write(
-                            str(finalize_pgn(game.pgn_text, game.player_color, game.engine_name))
-                        )
+                        handle.write(str(final_pgn))
                         handle.write("\n")
                     print(c(f"Saved PGN to {filename}", Style.DIM))
+
+                if ask_yes_no("Run post-game analysis with Stockfish?"):
+                    stockfish_cmd = ask_stockfish_command()
+                    stats = _analyze_pgn_with_stockfish(final_pgn, stockfish_cmd)
+                    if stats is None:
+                        print(c("Could not start Stockfish.", Style.RED))
+                    else:
+                        you_color = game.player_color
+                        engine_color = not game.player_color
+                        you_stats = stats[you_color]
+                        engine_stats = stats[engine_color]
+                        print()
+                        print(c("Post-game analysis:", Style.CYAN, Style.BOLD))
+                        print(
+                            f"  You: {you_stats['inaccuracies']} inaccuracies, "
+                            f"{you_stats['mistakes']} mistakes, "
+                            f"{you_stats['blunders']} blunders, "
+                            f"{_summarize_cpl(you_stats['cpl'])}"
+                        )
+                        print(
+                            f"  {game.engine_name} Bot: {engine_stats['inaccuracies']} "
+                            f"inaccuracies, {engine_stats['mistakes']} mistakes, "
+                            f"{engine_stats['blunders']} blunders, "
+                            f"{_summarize_cpl(engine_stats['cpl'])}"
+                        )
             game.close_engine()
             game = None
             print()
