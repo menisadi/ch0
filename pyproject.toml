@@ -39,3 +39,8 @@ exclude = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ch0"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]
