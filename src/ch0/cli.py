@@ -337,15 +337,35 @@ def _summarize_cpl(loss_cp: int) -> str:
 def _analyze_pgn_with_stockfish(
     game_pgn: chess.pgn.Game,
     stockfish_cmd: str,
-) -> dict[chess.Color, dict[str, int]] | None:
+) -> dict[chess.Color, dict[str, int | str | bool]] | None:
     cmd = stockfish_cmd.strip() or "stockfish"
     engine = _spawn_uci_engine(cmd)
     if engine is None:
         return None
 
     stats = {
-        chess.WHITE: {"inaccuracies": 0, "mistakes": 0, "blunders": 0, "cpl": 0},
-        chess.BLACK: {"inaccuracies": 0, "mistakes": 0, "blunders": 0, "cpl": 0},
+        chess.WHITE: {
+            "inaccuracies": 0,
+            "mistakes": 0,
+            "blunders": 0,
+            "cpl": 0,
+            "moves": 0,
+            "worst_loss": -1,
+            "worst_san": "",
+            "worst_move_number": 0,
+            "worst_is_white": True,
+        },
+        chess.BLACK: {
+            "inaccuracies": 0,
+            "mistakes": 0,
+            "blunders": 0,
+            "cpl": 0,
+            "moves": 0,
+            "worst_loss": -1,
+            "worst_san": "",
+            "worst_move_number": 0,
+            "worst_is_white": False,
+        },
     }
     board = game_pgn.board()
     limit = chess.engine.Limit(depth=12)
@@ -353,6 +373,8 @@ def _analyze_pgn_with_stockfish(
     try:
         for move in game_pgn.mainline_moves():
             mover = board.turn
+            move_san = board.san(move)
+            move_number = board.fullmove_number
             best_info = engine.analyse(board, limit)
             best_cp = _score_to_cp(best_info["score"].pov(mover))
 
@@ -361,6 +383,13 @@ def _analyze_pgn_with_stockfish(
 
             loss = max(0, best_cp - played_cp)
             stats[mover]["cpl"] += loss
+            stats[mover]["moves"] += 1
+
+            if loss > stats[mover]["worst_loss"]:
+                stats[mover]["worst_loss"] = loss
+                stats[mover]["worst_san"] = move_san
+                stats[mover]["worst_move_number"] = move_number
+                stats[mover]["worst_is_white"] = mover == chess.WHITE
 
             if loss >= 300:
                 stats[mover]["blunders"] += 1
@@ -380,6 +409,44 @@ def ask_stockfish_command() -> str:
     prompt = "Stockfish command/path"
     suffix = " [stockfish]: "
     return input(c(prompt + suffix, Style.DIM)).strip()
+
+
+def ask_analysis_report() -> str:
+    prompt = "Post-game analysis: (s)tats, (a)ccuracy, (w)orst move, (f)ull, or (n)one?"
+    suffix = " [n]: "
+    while True:
+        ans = input(c(prompt + suffix, Style.DIM)).strip().lower()
+        if not ans:
+            return "none"
+        if ans in {"s", "stats"}:
+            return "stats"
+        if ans in {"a", "accuracy", "avg"}:
+            return "accuracy"
+        if ans in {"w", "worst"}:
+            return "worst"
+        if ans in {"f", "full", "report"}:
+            return "full"
+        if ans in {"n", "no", "none", "skip"}:
+            return "none"
+        print(c("Please answer stats, accuracy, worst, full, or none.", Style.RED))
+
+
+def _average_cpl(stats_entry: dict[str, int | str | bool]) -> int:
+    moves = int(stats_entry["moves"])
+    if moves <= 0:
+        return 0
+    return round(int(stats_entry["cpl"]) / moves)
+
+
+def _format_worst_move(stats_entry: dict[str, int | str | bool]) -> str:
+    moves = int(stats_entry["moves"])
+    if moves <= 0:
+        return "Worst move: n/a"
+    move_number = int(stats_entry["worst_move_number"])
+    move_san = str(stats_entry["worst_san"])
+    worst_loss = int(stats_entry["worst_loss"])
+    prefix = f"{move_number}. " if bool(stats_entry["worst_is_white"]) else f"{move_number}... "
+    return f"Worst move: {prefix}{move_san} ({_summarize_cpl(worst_loss)})"
 
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -432,7 +499,8 @@ def main(argv: list[str] | None = None):
                         handle.write("\n")
                     print(c(f"Saved PGN to {filename}", Style.DIM))
 
-                if ask_yes_no("Run post-game analysis with Stockfish?"):
+                analysis_choice = ask_analysis_report()
+                if analysis_choice != "none":
                     stockfish_cmd = ask_stockfish_command()
                     stats = _analyze_pgn_with_stockfish(final_pgn, stockfish_cmd)
                     if stats is None:
@@ -444,18 +512,36 @@ def main(argv: list[str] | None = None):
                         engine_stats = stats[engine_color]
                         print()
                         print(c("Post-game analysis:", Style.CYAN, Style.BOLD))
-                        print(
-                            f"  You: {you_stats['inaccuracies']} inaccuracies, "
-                            f"{you_stats['mistakes']} mistakes, "
-                            f"{you_stats['blunders']} blunders, "
-                            f"{_summarize_cpl(you_stats['cpl'])}"
-                        )
-                        print(
-                            f"  {game.engine_name} Bot: {engine_stats['inaccuracies']} "
-                            f"inaccuracies, {engine_stats['mistakes']} mistakes, "
-                            f"{engine_stats['blunders']} blunders, "
-                            f"{_summarize_cpl(engine_stats['cpl'])}"
-                        )
+                        if analysis_choice in {"stats", "full"}:
+                            print(
+                                f"  {c('You:', Style.CYAN)} "
+                                f"{you_stats['inaccuracies']} inaccuracies, "
+                                f"{you_stats['mistakes']} mistakes, "
+                                f"{you_stats['blunders']} blunders"
+                            )
+                            print(
+                                f"  {c(f'{game.engine_name} Bot:', Style.CYAN)} "
+                                f"{engine_stats['inaccuracies']} inaccuracies, "
+                                f"{engine_stats['mistakes']} mistakes, "
+                                f"{engine_stats['blunders']} blunders"
+                            )
+                        if analysis_choice in {"accuracy", "full"}:
+                            print(
+                                f"  {c('You:', Style.CYAN)} Avg CPL {_average_cpl(you_stats)}"
+                            )
+                            print(
+                                f"  {c(f'{game.engine_name} Bot:', Style.CYAN)} "
+                                f"Avg CPL {_average_cpl(engine_stats)}"
+                            )
+                        if analysis_choice in {"worst", "full"}:
+                            print(
+                                f"  {c('You:', Style.CYAN)} "
+                                f"{_format_worst_move(you_stats)}"
+                            )
+                            print(
+                                f"  {c(f'{game.engine_name} Bot:', Style.CYAN)} "
+                                f"{_format_worst_move(engine_stats)}"
+                            )
             game.close_engine()
             game = None
             print()
