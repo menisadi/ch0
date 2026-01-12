@@ -9,6 +9,7 @@ A minimal terminal game for playing blindfold chess against built-in engines.
 - Install it as a standalone CLI tool
 - Play by entering SAN moves (`e4`, `Nf3`, `exd5`, `a8=Q`) plus a handful of helpful commands (`show`, `fen`, `pgn`, …)
 - Includes bundled engines (Sunfish, Andoma) and a “bring your own UCI engine” mode
+- Adds post-game analysis after the result is announced
 
 ---
 
@@ -119,4 +120,4 @@ uv run ch0
 - [ ] Add optional PGN autosave to a file (date/engine/color in file-name)
 - [ ] Add "illegal moves" count (printed at the end)
 - [ ] Add Stockfish bundling or automatic UCI discovery
-- [ ] Add some sort of post-game analysis
+- [x] Add post-game analysis
