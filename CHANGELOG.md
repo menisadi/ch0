@@ -13,6 +13,11 @@ Semantic Versioning.
 
 ### Fixed
 
+## [1.3.2] - 2026-01-12
+
+### Fixed
+- Reject SAN capture notation when no capture is available (e.g., `Nxe5` without a target).
+
 ## [1.3.1] - 2026-01-12
 
 ### Added
