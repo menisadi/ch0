@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "play-ch0"
-version = "1.3.0"
+version = "1.3.1"
 description = "Blindfold chess CLI with built-in engines"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -21,6 +21,8 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/menisadi/ch0"
 Repository = "https://github.com/menisadi/ch0"
+Changelog = "https://github.com/menisadi/ch0/blob/main/CHANGELOG.md"
+Releases = "https://github.com/menisadi/ch0/releases"
 
 [project.scripts]
 ch0 = "ch0.cli:main"
