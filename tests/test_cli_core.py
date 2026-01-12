@@ -146,6 +146,59 @@ def test_book_status_line(tmp_path: Path) -> None:
     assert cli._book_status_line(str(book), 0.5) == f"Opening book: {book} (50%)"
 
 
+def test_parse_player_move_rejects_non_capture_with_x() -> None:
+    board = chess.Board()
+    moves = [
+        "e4",
+        "c6",
+        "Nf3",
+        "d5",
+        "d3",
+        "dxe4",
+        "dxe4",
+        "Qxd1",
+        "Kxd1",
+        "Bg4",
+        "Be2",
+        "e6",
+        "Ne5",
+        "Bxe2",
+        "Kxe2",
+        "Nf6",
+        "f3",
+        "Bd6",
+        "Nc4",
+        "Bc7",
+        "a4",
+        "O-O",
+        "Be3",
+        "Nbd7",
+        "a5",
+        "a6",
+        "Nbd2",
+    ]
+    for san in moves:
+        board.push_san(san)
+
+    assert cli._parse_player_move(board, "Nxe5") is None
+
+
+def test_parse_player_move_accepts_capture_with_x() -> None:
+    board = chess.Board()
+    board.push_san("e4")
+    board.push_san("d5")
+    move = cli._parse_player_move(board, "exd5")
+    assert move is not None
+    assert board.is_capture(move)
+
+
+def test_parse_player_move_accepts_non_capture() -> None:
+    board = chess.Board()
+    move = cli._parse_player_move(board, "e4")
+    assert move is not None
+    assert board.is_capture(move) is False
+
+
 def test_cpl_helpers() -> None:
     empty = {
         "inaccuracies": 0,

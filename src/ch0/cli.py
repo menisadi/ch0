@@ -287,6 +287,16 @@ def parse_command(s: str):
     return s.lower()
 
 
+def _parse_player_move(board: chess.Board, user_in: str) -> chess.Move | None:
+    try:
+        move = board.parse_san(user_in)
+    except ValueError:
+        return None
+    if "x" in user_in and not board.is_capture(move):
+        return None
+    return move
+
+
 def ask_yes_no(prompt: str, default_no: bool = True) -> bool:
     suffix = " [y/N]: " if default_no else " [Y/n]: "
     while True:
@@ -672,11 +682,12 @@ def main(argv: list[str] | None = None):
             continue
 
         # Otherwise, try to interpret it as a move in SAN
-        try:
-            game.board.push_san(user_in)
-        except ValueError:
+        move = _parse_player_move(game.board, user_in)
+        if move is None:
             print(c("Illegal move / unknown command.", Style.RED))
             continue
+
+        game.board.push(move)
 
         # Optional: extremely subtle acknowledgement (comment out if you want *zero* noise)
         # print(c("✓", Style.GREEN, Style.DIM))
