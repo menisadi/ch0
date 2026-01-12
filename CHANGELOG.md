@@ -8,6 +8,14 @@ Semantic Versioning.
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+### Fixed
+
+## [1.3.1] - 2026-01-12
+
+### Added
 - Pytest scaffolding plus initial core tests for the CLI game flow.
 
 ## [1.3.0] - 2025-12-30
