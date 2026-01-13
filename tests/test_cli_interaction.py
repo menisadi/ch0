@@ -69,3 +69,14 @@ def test_main_start_resign_quit(monkeypatch: pytest.MonkeyPatch, capsys: pytest.
     out = capsys.readouterr().out
     assert "Resigned." in out
     assert "Goodbye." in out
+
+
+def test_main_lobby_version(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    feed_inputs(monkeypatch, ["version", "quit"])
+    monkeypatch.setattr(cli, "_format_version", lambda: "ch0 9.9.9")
+
+    cli.main([])
+
+    out = capsys.readouterr().out
+    assert "ch0 9.9.9" in out
+    assert "Goodbye." in out

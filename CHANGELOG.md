@@ -13,6 +13,11 @@ Semantic Versioning.
 
 ### Fixed
 
+## [1.3.3] - 2026-01-13
+
+### Added
+- Add `--version` flag and lobby `version` command to display the current release.
+
 ## [1.3.2] - 2026-01-12
 
 ### Fixed

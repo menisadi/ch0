@@ -1,11 +1,14 @@
 #!/usr/bin/env -S uv run
 import argparse
-import random
-import subprocess
 import io
 import os
+import random
 import shlex
+import subprocess
+import tomllib
 from datetime import date, datetime
+from importlib import metadata
+from pathlib import Path
 
 import chess
 import chess.pgn
@@ -42,6 +45,34 @@ class Style:
 
 def c(text: str, *styles: str) -> str:
     return "".join(styles) + text + Style.RESET
+
+
+# --- Version ----------------------------------------------------------------
+def _get_version() -> str:
+    for name in ("play-ch0", "ch0"):
+        try:
+            return metadata.version(name)
+        except metadata.PackageNotFoundError:
+            continue
+        except Exception:
+            break
+
+    try:
+        root = Path(__file__).resolve().parents[2]
+        pyproject = root / "pyproject.toml"
+        if pyproject.exists():
+            data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
+            version = data.get("project", {}).get("version")
+            if isinstance(version, str) and version:
+                return version
+    except Exception:
+        pass
+
+    return "unknown"
+
+
+def _format_version() -> str:
+    return f"ch0 {_get_version()}"
 
 
 # --- Game logic --------------------------------------------------------------
@@ -265,6 +296,7 @@ def print_help():
     print(f"  {c('start', Style.CYAN)}  start a new game")
     print(f"  {c('quick', Style.CYAN)}  start with sunfish + random color")
     print(f"  {c('help', Style.CYAN)}   show this help")
+    print(f"  {c('version', Style.CYAN)} show program version")
     print(f"  {c('quit', Style.CYAN)}   quit")
     print()
     print(c("In-game:", Style.CYAN, Style.BOLD))
@@ -462,6 +494,12 @@ def _format_worst_move(stats_entry: dict[str, int | str | bool]) -> str:
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        "--version",
+        action="version",
+        version=_format_version(),
+        help="Show version and exit.",
+    )
+    parser.add_argument(
         "--verbose",
         action="store_true",
         help="Show a subtle indicator when an opening book move is used.",
@@ -628,6 +666,10 @@ def main(argv: list[str] | None = None):
 
             if cmd == "help":
                 print_help()
+                print()
+                continue
+            if cmd == "version":
+                print(_format_version())
                 print()
                 continue
 
