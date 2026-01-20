@@ -26,7 +26,7 @@ uv tool install play-ch0
 python -m pip install --upgrade play-ch0
 ````
 
-> Requires **Python 3.13+**.
+> Requires **Python 3.11+**.
 
 ---
 
