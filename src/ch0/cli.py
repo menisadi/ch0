@@ -25,6 +25,7 @@ from .engines.sunfish.tools import uci
 # if you need broader support, install `colorama` and it will be used if present.
 try:
     import colorama  # type: ignore
+
     colorama.just_fix_windows_console()
 except Exception:
     pass
@@ -96,7 +97,7 @@ class Game:
         self.book_path = book_path
         self.book_chance = book_chance
         self.turn = chess.WHITE  # whose turn it is to move in our bookkeeping
-        self.count = 0           # move number (full moves)
+        self.count = 0  # move number (full moves)
         self.pgn_text = ""
         self.ended = False
 
@@ -253,35 +254,48 @@ def _book_status_line(book_path: str | None, book_chance: float) -> str:
     return "Opening book: none"
 
 
-def choose_engine() -> tuple[str, str, chess.engine.SimpleEngine | None]:
+_CANCEL = {"back", "cancel", "q"}
+
+
+def choose_engine() -> tuple[str, str, chess.engine.SimpleEngine | None] | None:
     options = ["random", "andoma", "sunfish", "uci"]
     print(c("Choose engine:", Style.CYAN, Style.BOLD))
     for i, name in enumerate(options, start=1):
         print(f"  {c(str(i) + '.', Style.DIM)} {c(name, Style.CYAN)}")
+    print(c("  (back/cancel to return to lobby)", Style.DIM))
     while True:
         choice = input(c("engine> ", Style.DIM)).strip().lower()
+        if choice in _CANCEL:
+            return None
         if choice in {"1", "2", "3", "4"}:
             choice = options[int(choice) - 1]
         if choice in options:
             if choice != "uci":
                 return choice, choice, None
+            print(c("  (back/cancel to go back)", Style.DIM))
             while True:
                 cmd = input(c("uci engine path/command> ", Style.DIM)).strip()
+                if cmd.lower() in _CANCEL:
+                    break
                 engine = _spawn_uci_engine(cmd)
                 if engine is not None:
                     display_name = _engine_display_name(cmd, engine)
                     return "uci", display_name, engine
                 print(c("Could not start engine. Try again.", Style.RED))
+            continue
         print(c("Invalid choice.", Style.RED))
 
 
-def choose_color():
+def choose_color() -> chess.Color | None:
     print(c("Choose your color:", Style.CYAN, Style.BOLD))
     print(f"  {c('1.', Style.DIM)} {c('white', Style.CYAN)}")
     print(f"  {c('2.', Style.DIM)} {c('black', Style.CYAN)}")
     print(f"  {c('3.', Style.DIM)} {c('random', Style.CYAN)}")
+    print(c("  (back/cancel to go back)", Style.DIM))
     while True:
         choice = input(c("color> ", Style.DIM)).strip().lower()
+        if choice in _CANCEL:
+            return None
         if choice in {"1", "white"}:
             return chess.WHITE
         if choice in {"2", "black"}:
@@ -487,7 +501,11 @@ def _format_worst_move(stats_entry: dict[str, int | str | bool]) -> str:
     move_number = int(stats_entry["worst_move_number"])
     move_san = str(stats_entry["worst_san"])
     worst_loss = int(stats_entry["worst_loss"])
-    prefix = f"{move_number}. " if bool(stats_entry["worst_is_white"]) else f"{move_number}... "
+    prefix = (
+        f"{move_number}. "
+        if bool(stats_entry["worst_is_white"])
+        else f"{move_number}... "
+    )
     return f"Worst move: {prefix}{move_san} ({_summarize_cpl(worst_loss)})"
 
 
@@ -532,7 +550,9 @@ def main(argv: list[str] | None = None):
         # If a game ended, optionally print PGN, then return to lobby.
         if game is not None and game.ended:
             if game.pgn_text:
-                final_pgn = finalize_pgn(game.pgn_text, game.player_color, game.engine_name)
+                final_pgn = finalize_pgn(
+                    game.pgn_text, game.player_color, game.engine_name
+                )
                 action = ask_pgn_action()
                 if action == "print":
                     print()
@@ -604,8 +624,18 @@ def main(argv: list[str] | None = None):
 
             cmd = parse_command(user_in)
             if cmd == "start":
-                engine_kind, engine_name, engine = choose_engine()
+                result = choose_engine()
+                if result is None:
+                    continue
+                engine_kind, engine_name, engine = result
                 player_color = choose_color()
+                if player_color is None:
+                    if engine is not None:
+                        try:
+                            engine.quit()
+                        except Exception:
+                            pass
+                    continue
                 game = Game(
                     engine_kind,
                     engine_name,
@@ -679,7 +709,12 @@ def main(argv: list[str] | None = None):
                     game.close_engine()
                 break
 
-            print(c("No active game. Type 'start' or 'quick' (or 'help', 'quit').", Style.RED))
+            print(
+                c(
+                    "No active game. Type 'start' or 'quick' (or 'help', 'quit').",
+                    Style.RED,
+                )
+            )
             continue
 
         # If it's engine's turn, just let it move.
@@ -711,9 +746,7 @@ def main(argv: list[str] | None = None):
             elif cmd == "resign":
                 print(c("Resigned.", Style.YELLOW, Style.BOLD))
                 result = "0-1" if game.player_color == chess.WHITE else "1-0"
-                game.pgn_text += (
-                    f" {{ {bool_color_to_string(game.player_color)} resigns. }} {result}"
-                )
+                game.pgn_text += f" {{ {bool_color_to_string(game.player_color)} resigns. }} {result}"
                 game.ended = True
             elif cmd == "quit":
                 print(c("Goodbye.", Style.DIM))

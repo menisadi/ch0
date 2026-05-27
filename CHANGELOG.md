@@ -13,6 +13,12 @@ Semantic Versioning.
 
 ### Fixed
 
+## [1.3.5] - 2026-05-27
+
+### Added
+
+- Cancel out of engine/color selection by typing `back`, `cancel`, or `q` — returns to the lobby without starting a game. Also works at the `uci engine path/command>` sub-prompt to go back to engine selection.
+
 ## [1.3.4] - 2026-01-20
 
 ### Added
