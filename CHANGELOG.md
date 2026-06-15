@@ -13,6 +13,16 @@ Semantic Versioning.
 
 ### Fixed
 
+## [1.3.6] - 2026-06-15
+
+### Added
+
+- `--think-time` flag to control how long a UCI engine is allowed to think per move (default: 3.0 seconds). Useful for slower neural network engines like maia3.
+
+### Fixed
+
+- UCI engine timeout and unexpected termination now end the game gracefully with an error message instead of crashing.
+
 ## [1.3.5] - 2026-05-27
 
 ### Added

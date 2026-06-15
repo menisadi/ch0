@@ -87,6 +87,7 @@ class Game:
         verbose: bool = False,
         book_path: str | None = None,
         book_chance: float = 0.5,
+        uci_think_time: float = 3.0,
     ):
         self.board = chess.Board()
         self.engine_kind = engine_kind  # "random", "andoma", "sunfish", "uci"
@@ -96,6 +97,7 @@ class Game:
         self.verbose = verbose
         self.book_path = book_path
         self.book_chance = book_chance
+        self.uci_think_time = uci_think_time
         self.turn = chess.WHITE  # whose turn it is to move in our bookkeeping
         self.count = 0  # move number (full moves)
         self.pgn_text = ""
@@ -173,9 +175,14 @@ def bot_makes_a_move(game: Game):
     elif game.engine_kind == "uci":
         if game.engine is None:
             raise RuntimeError("UCI engine is not initialized.")
-        think_time = random.uniform(0.1, 0.5)
-        result = game.engine.play(board, chess.engine.Limit(time=think_time))
-        move = result.move
+        think_time = random.uniform(game.uci_think_time / 2, game.uci_think_time)
+        try:
+            result = game.engine.play(board, chess.engine.Limit(time=think_time))
+            move = result.move
+        except (TimeoutError, chess.engine.EngineTerminatedError) as e:
+            print(c(f"Engine error: {e} — ending game.", Style.RED))
+            game.ended = True
+            return
 
     # optional opening book
     roll = random.random()
@@ -535,6 +542,13 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=0.5,
         help="Chance to use an opening book move when available (0.0-1.0).",
     )
+    parser.add_argument(
+        "--think-time",
+        metavar="SECONDS",
+        type=float,
+        default=3.0,
+        help="Maximum seconds for a UCI engine to think per move (default: 3.0).",
+    )
     return parser.parse_args(argv)
 
 
@@ -644,6 +658,7 @@ def main(argv: list[str] | None = None):
                     verbose=args.verbose,
                     book_path=args.book,
                     book_chance=args.book_chance,
+                    uci_think_time=args.think_time,
                 )
 
                 print()
@@ -676,6 +691,7 @@ def main(argv: list[str] | None = None):
                     verbose=args.verbose,
                     book_path=args.book,
                     book_chance=args.book_chance,
+                    uci_think_time=args.think_time,
                 )
 
                 print()
