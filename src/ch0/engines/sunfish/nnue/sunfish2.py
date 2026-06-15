@@ -1,6 +1,6 @@
 #!/usr/bin/env pypy3
 
-import time, math
+import time
 from itertools import count
 from collections import namedtuple, defaultdict
 
@@ -9,6 +9,7 @@ from collections import namedtuple, defaultdict
 # TODO: I we really want to save bytes, maybe wrap this in minifier-hide,
 # and put pypy3 directly in pack.sh instead of using exec on the .py file.
 from functools import partial
+
 print = partial(print, flush=True)
 
 version = "sunfish 2"
@@ -23,54 +24,402 @@ version = "sunfish 2"
 # For one thing, they could easily all fit into int8.
 piece = {"P": 100, "N": 280, "B": 320, "R": 479, "Q": 929, "K": 60000}
 pst = {
-    'P': (   0,   0,   0,   0,   0,   0,   0,   0,
-            78,  83,  86,  73, 102,  82,  85,  90,
-             7,  29,  21,  44,  40,  31,  44,   7,
-           -17,  16,  -2,  15,  14,   0,  15, -13,
-           -26,   3,  10,   9,   6,   1,   0, -23,
-           -22,   9,   5, -11, -10,  -2,   3, -19,
-           -31,   8,  -7, -37, -36, -14,   3, -31,
-             0,   0,   0,   0,   0,   0,   0,   0),
-    'N': ( -66, -53, -75, -75, -10, -55, -58, -70,
-            -3,  -6, 100, -36,   4,  62,  -4, -14,
-            10,  67,   1,  74,  73,  27,  62,  -2,
-            24,  24,  45,  37,  33,  41,  25,  17,
-            -1,   5,  31,  21,  22,  35,   2,   0,
-           -18,  10,  13,  22,  18,  15,  11, -14,
-           -23, -15,   2,   0,   2,   0, -23, -20,
-           -74, -23, -26, -24, -19, -35, -22, -69),
-    'B': ( -59, -78, -82, -76, -23,-107, -37, -50,
-           -11,  20,  35, -42, -39,  31,   2, -22,
-            -9,  39, -32,  41,  52, -10,  28, -14,
-            25,  17,  20,  34,  26,  25,  15,  10,
-            13,  10,  17,  23,  17,  16,   0,   7,
-            14,  25,  24,  15,   8,  25,  20,  15,
-            19,  20,  11,   6,   7,   6,  20,  16,
-            -7,   2, -15, -12, -14, -15, -10, -10),
-    'R': (  35,  29,  33,   4,  37,  33,  56,  50,
-            55,  29,  56,  67,  55,  62,  34,  60,
-            19,  35,  28,  33,  45,  27,  25,  15,
-             0,   5,  16,  13,  18,  -4,  -9,  -6,
-           -28, -35, -16, -21, -13, -29, -46, -30,
-           -42, -28, -42, -25, -25, -35, -26, -46,
-           -53, -38, -31, -26, -29, -43, -44, -53,
-           -30, -24, -18,   5,  -2, -18, -31, -32),
-    'Q': (   6,   1,  -8,-104,  69,  24,  88,  26,
-            14,  32,  60, -10,  20,  76,  57,  24,
-            -2,  43,  32,  60,  72,  63,  43,   2,
-             1, -16,  22,  17,  25,  20, -13,  -6,
-           -14, -15,  -2,  -5,  -1, -10, -20, -22,
-           -30,  -6, -13, -11, -16, -11, -16, -27,
-           -36, -18,   0, -19, -15, -15, -21, -38,
-           -39, -30, -31, -13, -31, -36, -34, -42),
-    'K': (   4,  54,  47, -99, -99,  60,  83, -62,
-           -32,  10,  55,  56,  56,  55,  10,   3,
-           -62,  12, -57,  44, -67,  28,  37, -31,
-           -55,  50,  11,  -4, -19,  13,   0, -49,
-           -55, -43, -52, -28, -51, -47,  -8, -50,
-           -47, -42, -43, -79, -64, -32, -29, -32,
-            -4,   3, -14, -50, -57, -18,  13,   4,
-            17,  30,  -3, -14,   6,  -1,  40,  18),
+    "P": (
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        78,
+        83,
+        86,
+        73,
+        102,
+        82,
+        85,
+        90,
+        7,
+        29,
+        21,
+        44,
+        40,
+        31,
+        44,
+        7,
+        -17,
+        16,
+        -2,
+        15,
+        14,
+        0,
+        15,
+        -13,
+        -26,
+        3,
+        10,
+        9,
+        6,
+        1,
+        0,
+        -23,
+        -22,
+        9,
+        5,
+        -11,
+        -10,
+        -2,
+        3,
+        -19,
+        -31,
+        8,
+        -7,
+        -37,
+        -36,
+        -14,
+        3,
+        -31,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+    ),
+    "N": (
+        -66,
+        -53,
+        -75,
+        -75,
+        -10,
+        -55,
+        -58,
+        -70,
+        -3,
+        -6,
+        100,
+        -36,
+        4,
+        62,
+        -4,
+        -14,
+        10,
+        67,
+        1,
+        74,
+        73,
+        27,
+        62,
+        -2,
+        24,
+        24,
+        45,
+        37,
+        33,
+        41,
+        25,
+        17,
+        -1,
+        5,
+        31,
+        21,
+        22,
+        35,
+        2,
+        0,
+        -18,
+        10,
+        13,
+        22,
+        18,
+        15,
+        11,
+        -14,
+        -23,
+        -15,
+        2,
+        0,
+        2,
+        0,
+        -23,
+        -20,
+        -74,
+        -23,
+        -26,
+        -24,
+        -19,
+        -35,
+        -22,
+        -69,
+    ),
+    "B": (
+        -59,
+        -78,
+        -82,
+        -76,
+        -23,
+        -107,
+        -37,
+        -50,
+        -11,
+        20,
+        35,
+        -42,
+        -39,
+        31,
+        2,
+        -22,
+        -9,
+        39,
+        -32,
+        41,
+        52,
+        -10,
+        28,
+        -14,
+        25,
+        17,
+        20,
+        34,
+        26,
+        25,
+        15,
+        10,
+        13,
+        10,
+        17,
+        23,
+        17,
+        16,
+        0,
+        7,
+        14,
+        25,
+        24,
+        15,
+        8,
+        25,
+        20,
+        15,
+        19,
+        20,
+        11,
+        6,
+        7,
+        6,
+        20,
+        16,
+        -7,
+        2,
+        -15,
+        -12,
+        -14,
+        -15,
+        -10,
+        -10,
+    ),
+    "R": (
+        35,
+        29,
+        33,
+        4,
+        37,
+        33,
+        56,
+        50,
+        55,
+        29,
+        56,
+        67,
+        55,
+        62,
+        34,
+        60,
+        19,
+        35,
+        28,
+        33,
+        45,
+        27,
+        25,
+        15,
+        0,
+        5,
+        16,
+        13,
+        18,
+        -4,
+        -9,
+        -6,
+        -28,
+        -35,
+        -16,
+        -21,
+        -13,
+        -29,
+        -46,
+        -30,
+        -42,
+        -28,
+        -42,
+        -25,
+        -25,
+        -35,
+        -26,
+        -46,
+        -53,
+        -38,
+        -31,
+        -26,
+        -29,
+        -43,
+        -44,
+        -53,
+        -30,
+        -24,
+        -18,
+        5,
+        -2,
+        -18,
+        -31,
+        -32,
+    ),
+    "Q": (
+        6,
+        1,
+        -8,
+        -104,
+        69,
+        24,
+        88,
+        26,
+        14,
+        32,
+        60,
+        -10,
+        20,
+        76,
+        57,
+        24,
+        -2,
+        43,
+        32,
+        60,
+        72,
+        63,
+        43,
+        2,
+        1,
+        -16,
+        22,
+        17,
+        25,
+        20,
+        -13,
+        -6,
+        -14,
+        -15,
+        -2,
+        -5,
+        -1,
+        -10,
+        -20,
+        -22,
+        -30,
+        -6,
+        -13,
+        -11,
+        -16,
+        -11,
+        -16,
+        -27,
+        -36,
+        -18,
+        0,
+        -19,
+        -15,
+        -15,
+        -21,
+        -38,
+        -39,
+        -30,
+        -31,
+        -13,
+        -31,
+        -36,
+        -34,
+        -42,
+    ),
+    "K": (
+        4,
+        54,
+        47,
+        -99,
+        -99,
+        60,
+        83,
+        -62,
+        -32,
+        10,
+        55,
+        56,
+        56,
+        55,
+        10,
+        3,
+        -62,
+        12,
+        -57,
+        44,
+        -67,
+        28,
+        37,
+        -31,
+        -55,
+        50,
+        11,
+        -4,
+        -19,
+        13,
+        0,
+        -49,
+        -55,
+        -43,
+        -52,
+        -28,
+        -51,
+        -47,
+        -8,
+        -50,
+        -47,
+        -42,
+        -43,
+        -79,
+        -64,
+        -32,
+        -29,
+        -32,
+        -4,
+        3,
+        -14,
+        -50,
+        -57,
+        -18,
+        13,
+        4,
+        17,
+        30,
+        -3,
+        -14,
+        6,
+        -1,
+        40,
+        18,
+    ),
 }
 # Pad tables and join piece and pst dictionaries
 for k, table in pst.items():
@@ -103,12 +452,21 @@ initial = (
 # Lists of possible moves for each piece type.
 N, E, S, W = -10, 1, 10, -1
 directions = {
-    "P": (N, N+N, N+W, N+E),
-    "N": (N+N+E, E+N+E, E+S+E, S+S+E, S+S+W, W+S+W, W+N+W, N+N+W),
-    "B": (N+E, S+E, S+W, N+W),
+    "P": (N, N + N, N + W, N + E),
+    "N": (
+        N + N + E,
+        E + N + E,
+        E + S + E,
+        S + S + E,
+        S + S + W,
+        W + S + W,
+        W + N + W,
+        N + N + W,
+    ),
+    "B": (N + E, S + E, S + W, N + W),
     "R": (N, E, S, W),
-    "Q": (N, E, S, W, N+E, S+E, S+W, N+W),
-    "K": (N, E, S, W, N+E, S+E, S+W, N+W)
+    "Q": (N, E, S, W, N + E, S + E, S + W, N + W),
+    "K": (N, E, S, W, N + E, S + E, S + W, N + W),
 }
 
 # Mate value must be greater than 8*queen + 2*(rook+knight+bishop)
@@ -124,36 +482,35 @@ MATE_UPPER = piece["K"] + 10 * piece["Q"]
 # Maybe I should try three values B_0, B_1, B_2 to get a better idea of the
 # right formula
 # Constants for tuning search
-#QS_B = 219
-#QS_A = 500
-#EVAL_ROUGHNESS = 13
+# QS_B = 219
+# QS_A = 500
+# EVAL_ROUGHNESS = 13
 QS_B = 50
 QS_A = 250
 EVAL_ROUGHNESS = 17
 
 # Constants to be removed later
 USE_BOUND_FOR_CHECK_TEST = 1
-IID_LIMIT = 2 # depth > 2
-IID_REDUCE = 3 # depth reduction in IID
-REPEAT_NULL = 1 # Whether a null move can be responded too by another null move
-NULL_LIMIT = 2 # Only null-move if depth > NULL_LIMIT
-STALEMATE_LIMIT = 0 # Only null-move if depth > NULL_LIMIT
-
+IID_LIMIT = 2  # depth > 2
+IID_REDUCE = 3  # depth reduction in IID
+REPEAT_NULL = 1  # Whether a null move can be responded too by another null move
+NULL_LIMIT = 2  # Only null-move if depth > NULL_LIMIT
+STALEMATE_LIMIT = 0  # Only null-move if depth > NULL_LIMIT
 
 
 # There is some issue with combining "bound for check test" with a high "null_limit".
 
 # minifier-hide start
 opt_ranges = dict(
-    QS_A = (0, 500),
-    QS_B = (0, 500),
-    EVAL_ROUGHNESS = (0, 50),
-    USE_BOUND_FOR_CHECK_TEST = (0, 2),
-    IID_LIMIT = (0, 5),
-    IID_REDUCE = (1, 5),
-    REPEAT_NULL = (0, 1),
-    NULL_LIMIT = (0, 5),
-    STALEMATE_LIMIT = (0, 5),
+    QS_A=(0, 500),
+    QS_B=(0, 500),
+    EVAL_ROUGHNESS=(0, 50),
+    USE_BOUND_FOR_CHECK_TEST=(0, 2),
+    IID_LIMIT=(0, 5),
+    IID_REDUCE=(1, 5),
+    REPEAT_NULL=(0, 1),
+    NULL_LIMIT=(0, 5),
+    STALEMATE_LIMIT=(0, 5),
 )
 # minifier-hide end
 
@@ -191,13 +548,15 @@ class Position(namedtuple("Position", "board score wc bc ep kp")):
                         break
                     # Pawn move, double move and capture
                     if p == "P":
-                        if d in (N, N + N) and q != ".": break
-                        if d == N + N and (i < A1 + N or self.board[i + N] != "."): break
+                        if d in (N, N + N) and q != ".":
+                            break
+                        if d == N + N and (i < A1 + N or self.board[i + N] != "."):
+                            break
                         if (
                             d in (N + W, N + E)
                             and q == "."
                             and j not in (self.ep, self.kp, self.kp - 1, self.kp + 1)
-                            #and j != self.ep and abs(j - self.kp) >= 2
+                            # and j != self.ep and abs(j - self.kp) >= 2
                         ):
                             break
                         # If we move to the last row, we can be anything
@@ -219,7 +578,10 @@ class Position(namedtuple("Position", "board score wc bc ep kp")):
     def rotate(self, nullmove=False):
         """Rotates the board, preserving enpassant, unless nullmove"""
         return Position(
-            self.board[::-1].swapcase(), -self.score, self.bc, self.wc,
+            self.board[::-1].swapcase(),
+            -self.score,
+            self.bc,
+            self.wc,
             119 - self.ep if self.ep and not nullmove else 0,
             119 - self.kp if self.kp and not nullmove else 0,
         )
@@ -236,10 +598,14 @@ class Position(namedtuple("Position", "board score wc bc ep kp")):
         board = put(board, j, board[i])
         board = put(board, i, ".")
         # Castling rights, we move the rook or capture the opponent's
-        if i == A1: wc = (False, wc[1])
-        if i == H1: wc = (wc[0], False)
-        if j == A8: bc = (bc[0], False)
-        if j == H8: bc = (False, bc[1])
+        if i == A1:
+            wc = (False, wc[1])
+        if i == H1:
+            wc = (wc[0], False)
+        if j == A8:
+            bc = (bc[0], False)
+        if j == H8:
+            bc = (False, bc[1])
         # Castling
         if p == "K":
             wc = (False, False)
@@ -291,6 +657,7 @@ LO, UP = range(2)
 UpperEntry = namedtuple("UE", "depth score", defaults=(0, MATE_UPPER))
 LowerEntry = namedtuple("LE", "depth score move", defaults=(0, -MATE_UPPER, None))
 
+
 class Searcher:
     def __init__(self):
         self.tt_old = (defaultdict(LowerEntry), defaultdict(UpperEntry))
@@ -298,10 +665,10 @@ class Searcher:
         self.nodes = 0
 
     def bound(self, pos, gamma, depth, root=True):
-        """ Let s* be the "true" score of the sub-tree we are searching.
-            The method returns r, where
-            if gamma >  s* then s* <= r < gamma  (A better upper bound)
-            if gamma <= s* then gamma <= r <= s* (A better lower bound) """
+        """Let s* be the "true" score of the sub-tree we are searching.
+        The method returns r, where
+        if gamma >  s* then s* <= r < gamma  (A better upper bound)
+        if gamma <= s* then gamma <= r <= s* (A better lower bound)"""
         self.nodes += 1
 
         # Depth <= 0 is QSearch. Here any position is searched as deeply as is needed for
@@ -321,9 +688,11 @@ class Searcher:
         # nodes as the current search.
         lo_entry, up_entry = self.tt_old[LO][pos, root], self.tt_old[UP][pos, root]
         # score <= upper < gamma
-        if up_entry.depth >= depth and up_entry.score < gamma: return up_entry.score
+        if up_entry.depth >= depth and up_entry.score < gamma:
+            return up_entry.score
         # gamma <= lower <= score
-        if lo_entry.depth >= depth and lo_entry.score >= gamma: return lo_entry.score
+        if lo_entry.depth >= depth and lo_entry.score >= gamma:
+            return lo_entry.score
 
         # Kinda like IID?
         if lo_entry.move is None:
@@ -339,9 +708,17 @@ class Searcher:
             # (the RBNQ check), but in Micromax he just does null-move and then checks that
             # afterwards, before he returns the score.
             if depth > NULL_LIMIT and not root and any(c in pos.board for c in "RBNQ"):
-                #yield None, null_score
+                # yield None, null_score
                 # TODO: Make NULL_REDUCE argument
-                yield None, -self.bound(pos.rotate(nullmove=True), 1 - gamma, depth - 3, root=not REPEAT_NULL)
+                yield (
+                    None,
+                    -self.bound(
+                        pos.rotate(nullmove=True),
+                        1 - gamma,
+                        depth - 3,
+                        root=not REPEAT_NULL,
+                    ),
+                )
 
             # For QSearch we have a different kind of null-move, namely we can just stop
             # and not capture anything else.
@@ -355,32 +732,39 @@ class Searcher:
             if lo_entry.move:
                 # tt_score = -self.bound(pos.move(hi_entry.move), 1 - gamma, depth - 1, root=False)
                 # Singular extension: Check that all other moves are much worse
-                #if depth > 3 and tt_score >= gamma:
+                # if depth > 3 and tt_score >= gamma:
                 extend = False
                 if False and depth > 3:
                     g = lo_entry.score - QS_B - 3 * depth
-                    if all(-self.bound(pos.move(m), 1 - g, (depth - 2), root=False) < g
-                           for m in pos.gen_moves() if m != lo_entry.move):
+                    if all(
+                        -self.bound(pos.move(m), 1 - g, (depth - 2), root=False) < g
+                        for m in pos.gen_moves()
+                        if m != lo_entry.move
+                    ):
                         extend = True
-                        #actual = -self.bound(pos.move(lo_entry.move), 1 - gamma, depth-2, root=False)
-                        #print('extending', depth, render_move(lo_entry.move, True), f'gamma={gamma}, lo_entry.score={lo_entry.score}, g={g}, m={m}, actual={actual}')
-                        #print(pos.board)
+                        # actual = -self.bound(pos.move(lo_entry.move), 1 - gamma, depth-2, root=False)
+                        # print('extending', depth, render_move(lo_entry.move, True), f'gamma={gamma}, lo_entry.score={lo_entry.score}, g={g}, m={m}, actual={actual}')
+                        # print(pos.board)
                 d1 = depth - 1 + int(extend)
-                tt_score = -self.bound(pos.move(lo_entry.move), 1 - gamma, d1, root=False)
+                tt_score = -self.bound(
+                    pos.move(lo_entry.move), 1 - gamma, d1, root=False
+                )
                 yield lo_entry.move, tt_score
 
             # Basically just QS if QS_A is high enough
             val_lower = QS_B - QS_A * depth
 
             # Then all the other moves
-            val_moves = sorted(((pos.value(m), m) for m in pos.gen_moves()), reverse=True)
+            val_moves = sorted(
+                ((pos.value(m), m) for m in pos.gen_moves()), reverse=True
+            )
             for i, (val, move) in enumerate(val_moves):
                 if val < val_lower:
                     break
 
                 # Late move reduction
                 d1 = depth - 1 - int(i > 5)
-                #d1 = depth - 1 - i.bit_length() // 2
+                # d1 = depth - 1 - i.bit_length() // 2
 
                 # A very safe form of futility pruning
                 if d1 <= 0 and pos.score + val < gamma:
@@ -415,10 +799,10 @@ class Searcher:
         # realize it's not a mate after all. That's fair.
 
         # This is too expensive to test at depth = 0
-        #if depth > STALEMATE_LIMIT and best == -MATE_UPPER:
+        # if depth > STALEMATE_LIMIT and best == -MATE_UPPER:
         if depth > 0 and best == -MATE_UPPER:
             flipped = pos.rotate(nullmove=True)
-            #in_check = self.bound(flipped, MATE_UPPER, 0, root=True) == MATE_UPPER
+            # in_check = self.bound(flipped, MATE_UPPER, 0, root=True) == MATE_UPPER
             in_check = any(flipped.value(m) >= MATE_LOWER for m in flipped.gen_moves())
             best = 0 if not in_check else -MATE_LOWER
 
@@ -484,6 +868,7 @@ def render(i):
     rank, fil = divmod(i - A1, 10)
     return chr(fil + ord("a")) + str(-rank + 1)
 
+
 def render_move(move, white_pov):
     if move is None:
         return "(none)"
@@ -492,8 +877,11 @@ def render_move(move, white_pov):
         i, j = 119 - i, 119 - j
     return render(i) + render(j) + move.prom.lower()
 
+
 # minifier-hide start
-import sys, uci
+import sys
+import uci
+
 uci.run(sys.modules[__name__])
 sys.exit()
 # minifier-hide end
@@ -540,4 +928,3 @@ while True:
             i, j = 119 - i, 119 - j
         move_str = render(i) + render(j) + move.prom.lower()
         print("bestmove", move_str)
-

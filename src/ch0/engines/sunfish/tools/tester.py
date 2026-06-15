@@ -1,20 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import os
 import re
-import sys
 import time
-import subprocess
-import signal
 import argparse
-import importlib
-import itertools
 import random
-import warnings
 import chess
 import chess.engine
-import pathlib
 import tqdm
 import asyncio
 import collections
@@ -140,7 +132,7 @@ class Bench(Command):
             total_nodes += info.get("nodes", 0)
 
         print(f"Total nodes: {total_nodes}.")
-        print(f"Average knps: {round(total_nodes/(time.time() - start)/1000, 2)}.")
+        print(f"Average knps: {round(total_nodes / (time.time() - start) / 1000, 2)}.")
 
 
 ###############################################################################
@@ -164,7 +156,9 @@ class SelfPlay(Command):
         board = chess.Board()
         with tqdm.tqdm(total=100) as pbar:
             while not board.is_game_over():
-                limit = chess.engine.Limit(white_clock=wtime, black_clock=btime, white_inc=inc, black_inc=inc)
+                limit = chess.engine.Limit(
+                    white_clock=wtime, black_clock=btime, white_inc=inc, black_inc=inc
+                )
 
                 start = time.time()
                 result = await engine.play(board, limit)
@@ -190,12 +184,12 @@ def info_to_desc(info):
     if "nodes" in info and "time" in info:
         # Add 1 to denominator, since time could be rounded to 0
         nps = info["nodes"] / (info["time"] + 1)
-        desc.append(f"knps: {round(nps/1000, 2)}")
+        desc.append(f"knps: {round(nps / 1000, 2)}")
     if "depth" in info:
         desc.append(f"depth: {info['depth']}")
     if "score" in info:
         #:wprint(dir(info['score']))
-        desc.append(f"score: {info['score'].pov(chess.WHITE).cp/100:.1f}")
+        desc.append(f"score: {info['score'].pov(chess.WHITE).cp / 100:.1f}")
     return ", ".join(desc)
 
 
@@ -262,7 +256,7 @@ class Mate(Command):
             with await engine.analysis(board, limit) as analysis:
                 async for info in analysis:
                     pb.set_description(info_to_desc(info))
-                    if not "score" in info:
+                    if "score" not in info:
                         continue
                     score = info["score"]
                     if score.is_mate() or score.relative.cp > 10000:
@@ -306,18 +300,18 @@ class Draw(Command):
             total += 1
             board, _ = chess.Board.from_epd(line)
             with await engine.analysis(board, limit) as analysis:
-                last_lower = -10**10
+                last_lower = -(10**10)
                 last_upper = 10**10
                 async for info in analysis:
                     pb.set_description(info_to_desc(info))
-                    if not "score" in info:
+                    if "score" not in info:
                         continue
                     score = info["score"]
                     if score.is_mate():
                         continue
-                    if info.get('lowerbound'):
+                    if info.get("lowerbound"):
                         last_lower = score.relative.cp
-                    elif info.get('upperbound'):
+                    elif info.get("upperbound"):
                         last_upper = score.relative.cp
                     elif score.relative.cp == 0:
                         success += 1
@@ -330,7 +324,7 @@ class Draw(Command):
                 else:
                     if not args.quiet:
                         print("Failed on", line.strip())
-                        print("Result:", info, 'lower', last_lower, 'upper', last_upper)
+                        print("Result:", info, "lower", last_lower, "upper", last_upper)
                         pass
         print(f"Succeeded in {success}/{total} cases.")
         if not args.quiet:
@@ -392,13 +386,13 @@ class Best(Command):
                 if result.move in opts["bm"]:
                     points += 1
                 else:
-                    errors.append(f'Gave move {result.move} rather than {opts["bm"]}')
+                    errors.append(f"Gave move {result.move} rather than {opts['bm']}")
             if "am" in opts:
                 total += 1
                 if result.move not in opts["am"]:
                     points += 1
                 else:
-                    errors.append(f'Gave move {result.move} which is in {opts["am"]}')
+                    errors.append(f"Gave move {result.move} which is in {opts['am']}")
             if not args.quiet and errors:
                 print("Failed on", line.strip())
                 for er in errors:

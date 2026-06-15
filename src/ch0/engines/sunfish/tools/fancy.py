@@ -5,7 +5,6 @@ import chess.engine
 import json
 import argparse
 import random
-import time
 import sys
 import asyncio
 import pathlib
@@ -99,7 +98,7 @@ def print_unicode_board(board, perspective=chess.WHITE):
     """Prints the position from a given perspective."""
     sc, ec = "\x1b[0;30;107m", "\x1b[0m"
     for r in range(8) if perspective == chess.BLACK else range(7, -1, -1):
-        line = [f"{sc} {r+1}"]
+        line = [f"{sc} {r + 1}"]
         for c in range(8) if perspective == chess.WHITE else range(7, -1, -1):
             color = "\x1b[48;5;255m" if (r + c) % 2 == 1 else "\x1b[48;5;253m"
             if board.move_stack:
@@ -129,7 +128,6 @@ async def get_engine_move(engine, board, limit, game_id, multipv, debug=False):
     with await engine.analysis(
         board, limit, game=game_id, info=chess.engine.INFO_ALL, multipv=multipv or None
     ) as analysis:
-
         infos = [None for _ in range(multipv)]
         first = True
         async for new_info in analysis:
@@ -145,7 +143,7 @@ async def get_engine_move(engine, board, limit, game_id, multipv, debug=False):
             if not debug and all(infos) and "score" in analysis.info:
                 if not first:
                     # print('\n'*(multipv+1), end='')
-                    print(f"\u001b[1A\u001b[K" * (multipv + 1), end="")
+                    print("\u001b[1A\u001b[K" * (multipv + 1), end="")
                 else:
                     first = False
 
@@ -157,8 +155,8 @@ async def get_engine_move(engine, board, limit, game_id, multipv, debug=False):
                     else f"Mate in {score.mate()}"
                 )
                 print(
-                    f'{score}, nodes: {info.get("nodes", "N/A")}, nps: {info.get("nps", "N/A")},'
-                    f' time: {float(info.get("time", 0)):.1f}',
+                    f"{score}, nodes: {info.get('nodes', 'N/A')}, nps: {info.get('nps', 'N/A')},"
+                    f" time: {float(info.get('time', 0)):.1f}",
                     end="",
                 )
                 print()
@@ -180,14 +178,14 @@ async def get_engine_move(engine, board, limit, game_id, multipv, debug=False):
                         if key == "pv_nodes":
                             nodes = int(val[0])
                             rel = nodes / analysis.info["nodes"]
-                            score_rel = f"({score:.2f}, {rel*100:.0f}%)"
+                            score_rel = f"({score:.2f}, {rel * 100:.0f}%)"
                         else:
                             score_rel = f"({score:.2f})"
                     else:
                         score_rel = ""
 
                     # Something about N
-                    print(f'{info["multipv"]}: {score_rel} {variation}')
+                    print(f"{info['multipv']}: {score_rel} {variation}")
 
         return analysis.info["pv"][0]
 

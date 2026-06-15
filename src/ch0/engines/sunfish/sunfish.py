@@ -1,9 +1,8 @@
 #!/usr/bin/env pypy3
 from __future__ import print_function
 
-import time, math
 from itertools import count
-from collections import namedtuple, defaultdict
+from collections import namedtuple
 
 # If we could rely on the env -S argument, we could just use "pypy3 -u"
 # as the shebang to unbuffer stdout. But alas we have to do this instead:
@@ -524,15 +523,12 @@ class Position(namedtuple("Position", "board score wc bc ep kp")):
                     if p == "P":
                         if d in (N, N + N) and q != ".":
                             break
-                        if d == N + N and (
-                            i < A1 + N or self.board[i + N] != "."
-                        ):
+                        if d == N + N and (i < A1 + N or self.board[i + N] != "."):
                             break
                         if (
                             d in (N + W, N + E)
                             and q == "."
-                            and j
-                            not in (self.ep, self.kp, self.kp - 1, self.kp + 1)
+                            and j not in (self.ep, self.kp, self.kp - 1, self.kp + 1)
                             # and j != self.ep and abs(j - self.kp) >= 2
                         ):
                             break
@@ -689,9 +685,7 @@ class Searcher:
             # if depth > 2 and can_null and any(c in pos.board for c in "RBNQ"):
             # if depth > 2 and can_null and any(c in pos.board for c in "RBNQ") and abs(pos.score) < 500:
             if depth > 2 and can_null and abs(pos.score) < 500:
-                yield None, -self.bound(
-                    pos.rotate(nullmove=True), 1 - gamma, depth - 3
-                )
+                yield None, -self.bound(pos.rotate(nullmove=True), 1 - gamma, depth - 3)
 
             # For QSearch we have a different kind of null-move, namely we can just stop
             # and not capture anything else.
@@ -717,9 +711,7 @@ class Searcher:
             # We will search it again in the main loop below, but the tp will fix
             # things for us.
             if killer and pos.value(killer) >= val_lower:
-                yield killer, -self.bound(
-                    pos.move(killer), 1 - gamma, depth - 1
-                )
+                yield killer, -self.bound(pos.move(killer), 1 - gamma, depth - 1)
 
             # Then all the other moves
             for val, move in sorted(
@@ -735,9 +727,7 @@ class Searcher:
                 if depth <= 1 and pos.score + val < gamma:
                     # Need special case for MATE, since it would normally be caught
                     # before standing pat.
-                    yield move, (
-                        pos.score + val if val < MATE_LOWER else MATE_UPPER
-                    )
+                    yield move, (pos.score + val if val < MATE_LOWER else MATE_UPPER)
                     # We can also break, since we have ordered the moves by value,
                     # so it can't get any better than this.
                     break

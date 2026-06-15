@@ -62,7 +62,7 @@ def command(depth: int, board: chess.Board, msg: str):
         if len(tokens) <= moves_start or tokens[moves_start] != "moves":
             return
 
-        for move in tokens[(moves_start+1):]:
+        for move in tokens[(moves_start + 1) :]:
             board.push_uci(move)
 
     if msg == "d":

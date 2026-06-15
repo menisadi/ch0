@@ -1,4 +1,3 @@
-import tools.uci
 import chess
 import chess.engine
 

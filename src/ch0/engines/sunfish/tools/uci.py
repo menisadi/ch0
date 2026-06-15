@@ -1,6 +1,7 @@
 # Advanced UCI interface
 
-import re, time
+import re
+import time
 from concurrent.futures import ThreadPoolExecutor
 from threading import Event
 from functools import partial
@@ -31,9 +32,7 @@ def parse_move(move_str, white_pov):
     return sunfish.Move(i, j, prom)
 
 
-def go_loop(
-    searcher, hist, stop_event, max_movetime=0, max_depth=0, debug=False
-):
+def go_loop(searcher, hist, stop_event, max_movetime=0, max_depth=0, debug=False):
     if debug:
         print(f"Going movetime={max_movetime}, depth={max_depth}")
 
@@ -55,9 +54,7 @@ def go_loop(
         if score >= gamma:
             fields["score cp"] = f"{score} lowerbound"
             best_move = render_move(move, white_pov=len(hist) % 2 == 1)
-            fields["pv"] = " ".join(
-                pv(searcher, hist[-1], include_scores=False)
-            )
+            fields["pv"] = " ".join(pv(searcher, hist[-1], include_scores=False))
         else:
             fields["score cp"] = f"{score} upperbound"
         print("info", " ".join(f"{k} {v}" for k, v in fields.items()))
@@ -210,24 +207,16 @@ def run(sunfish_module, startpos):
                 elif args[:2] == ["position", "startpos"]:
                     hist = [startpos]
                     for ply, move in enumerate(args[3:]):
-                        hist.append(
-                            hist[-1].move(parse_move(move, ply % 2 == 0))
-                        )
+                        hist.append(hist[-1].move(parse_move(move, ply % 2 == 0)))
 
                 elif args[:2] == ["position", "fen"]:
                     pos = from_fen(*args[2:8])
-                    hist = (
-                        [pos]
-                        if get_color(pos) == WHITE
-                        else [pos.rotate(), pos]
-                    )
+                    hist = [pos] if get_color(pos) == WHITE else [pos.rotate(), pos]
                     if len(args) > 8:
                         assert args[8] == "moves"
                         for move in args[9:]:
                             hist.append(
-                                hist[-1].move(
-                                    parse_move(move, len(hist) % 2 == 1)
-                                )
+                                hist[-1].move(parse_move(move, len(hist) % 2 == 1))
                             )
 
                 elif args[0] == "go":
@@ -243,9 +232,7 @@ def run(sunfish_module, startpos):
                         think = int(movetime) / 1000
 
                     elif args[1] == "wtime":
-                        wtime, btime, winc, binc = [
-                            int(a) / 1000 for a in args[2::2]
-                        ]
+                        wtime, btime, winc, binc = [int(a) / 1000 for a in args[2::2]]
                         # we always consider ourselves white, but uci doesn't
                         if len(hist) % 2 == 0:
                             wtime, winc = btime, binc
@@ -309,13 +296,9 @@ def from_fen(board, color, castling, enpas, _hclock, _fclock):
         pos = sunfish.Position(board, 0, wf, bf, wc, bc, ep, 0)
         pos = pos._replace(score=pos.calculate_score())
     else:
-        score = sum(
-            sunfish.pst[c][i] for i, c in enumerate(board) if c.isupper()
-        )
+        score = sum(sunfish.pst[c][i] for i, c in enumerate(board) if c.isupper())
         score -= sum(
-            sunfish.pst[c.upper()][119 - i]
-            for i, c in enumerate(board)
-            if c.islower()
+            sunfish.pst[c.upper()][119 - i] for i, c in enumerate(board) if c.islower()
         )
         pos = sunfish.Position(board, score, wc, bc, ep, 0)
     return pos if color == "w" else pos.rotate()
@@ -331,9 +314,7 @@ def can_kill_king(pos):
     # captures in case of illegal castling.
     # MATE_LOWER = 60_000 - 10 * 929
     # return any(pos.value(m) >= MATE_LOWER for m in pos.gen_moves())
-    return any(
-        pos.board[m.j] == "k" or abs(m.j - pos.kp) < 2 for m in pos.gen_moves()
-    )
+    return any(pos.board[m.j] == "k" or abs(m.j - pos.kp) < 2 for m in pos.gen_moves())
 
 
 def pv(searcher, pos, include_scores=True, include_loop=False):

@@ -26,7 +26,9 @@ def test_ask_pgn_action_defaults_and_retries(monkeypatch: pytest.MonkeyPatch) ->
     assert cli.ask_pgn_action() == "save"
 
 
-def test_ask_analysis_report_defaults_and_retries(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_ask_analysis_report_defaults_and_retries(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     feed_inputs(monkeypatch, [""])
     assert cli.ask_analysis_report() == "none"
 
@@ -50,7 +52,9 @@ def test_spawn_uci_engine_handles_errors(monkeypatch: pytest.MonkeyPatch) -> Non
     assert cli._spawn_uci_engine("missing-engine") is None
 
 
-def test_main_start_resign_quit(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_main_start_resign_quit(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     feed_inputs(
         monkeypatch,
         [
@@ -71,7 +75,9 @@ def test_main_start_resign_quit(monkeypatch: pytest.MonkeyPatch, capsys: pytest.
     assert "Goodbye." in out
 
 
-def test_main_lobby_version(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_main_lobby_version(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     feed_inputs(monkeypatch, ["version", "quit"])
     monkeypatch.setattr(cli, "_format_version", lambda: "ch0 9.9.9")
 
